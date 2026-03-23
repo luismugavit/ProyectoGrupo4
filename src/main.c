@@ -10,9 +10,9 @@
 int main(){
 
     cliente c1;
-
+    cliente c2;
     cliente_init(&c1,1,"Luis");
-
+    cliente_init(&c2,2,"Ander");
     imprimirCliente(c1);
 
    // Interfaz en consola 
