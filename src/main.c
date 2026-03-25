@@ -209,7 +209,8 @@ int main(){
 	printf("primero: %d", numClientes);	
 	printf("primero: %s", listaClientes[0].nombre);
 
-	//TODO: liberar memoria de todos los MALLOC
+	//TODO: liberar memoria de todos los MALLOC.
+	//TODO: Crear funciones que carguen/inserten un cliente/dispositivo/configuracion especifica para no cargar toda la BD siempre.
 
    // Interfaz en consola 
    // MostrarMenuPrincipal(); 
