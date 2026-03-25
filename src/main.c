@@ -50,6 +50,7 @@ int insertClienteBD(sqlite3 *db, cliente c) {
 		return result;
 	}
 
+//Prueba
 
 	
     for (int i = 0; i < c.numDispositivos; i++) {
