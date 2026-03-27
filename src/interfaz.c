@@ -10,6 +10,8 @@
 
 extern cliente* listaClientes;
 extern int numClientes;
+
+
 void infoCliente(cliente c){
     printf("\n===========================================\n");
     printf("           INFO DEL CLIENTE\n");
@@ -62,7 +64,7 @@ void ListarClientes() {
     }
     printf("-------------------------------------------\n\n");
 
-    char linea[10]; // ¡Recuerda los corchetes para que fgets funcione!
+    char linea[10]; 
     int id_seleccionado;
     int encontrado = 0;
 
@@ -71,15 +73,12 @@ void ListarClientes() {
     
     fgets(linea, 10, stdin);
 
-    // sscanf intenta leer un entero (%d) desde 'linea' y guardarlo en 'id_seleccionado'.
-    // Si tiene éxito devuelve 1. Si el usuario escribe una letra, devuelve 0.
     if (sscanf(linea, "%d", &id_seleccionado) != 1) {
-        return; // No se introdujo un número válido (ej: escribió 'v' o 'salir'), así que volvemos.
+        return; 
     }
 
 
 
-    // A partir de aquí, el código de búsqueda sigue exactamente igual
     for (int i = 0; i < numClientes; i++) {
         if (listaClientes[i].id == id_seleccionado) {
             encontrado = 1;
