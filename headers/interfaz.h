@@ -9,6 +9,6 @@ int MostrarMenuGestionClientes();
 int MostrarMenuGestionDispositivos();
 
 int MostrarMenuPrincipal();
-
+void eliminarClienteUI();
 
 #endif

@@ -126,6 +126,29 @@ int contarFilas(sqlite3 *db, char *consulta, int bind_id){
 
 }
 
+int eliminarClienteBD(sqlite3 *db, int idCliente) {
+    sqlite3_stmt *stmt;
+    int result;
+
+    char *sql = "DELETE FROM cliente WHERE ID = ?";
+    result = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+
+    if (result != SQLITE_OK) {
+        printf("Error preparando la consulta (DELETE)\n");
+        return result;
+    }
+
+    sqlite3_bind_int(stmt, 1, idCliente);
+    result = sqlite3_step(stmt);
+
+    if (result != SQLITE_DONE) {
+        printf("Error borrando datos de la tabla cliente\n");
+    }
+
+    sqlite3_finalize(stmt);
+    return result;
+}
+
 cliente* cargarBD(sqlite3 *db, int *totalClientes){
 	sqlite3_stmt *stmtCliente;
 	sqlite3_stmt *stmtDispo;

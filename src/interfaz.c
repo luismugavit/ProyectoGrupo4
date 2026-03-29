@@ -131,6 +131,52 @@ void crearCliente(){
     insertClienteBD(db, cNew);
 }
 
+extern int eliminarClienteBD(sqlite3 *db, int idCliente);
+
+void eliminarClienteUI() {
+    char linea[10];
+    int id_eliminar;
+    int encontrado = 0;
+
+    printf("\n--- Eliminar Cliente ---\n");
+    printf("Introduzca el ID del cliente a eliminar: ");
+    fflush(stdout);
+
+    fgets(linea, 10, stdin);
+    if (sscanf(linea, "%d", &id_eliminar) != 1) {
+        printf("❌ Error: ID no valido. Introduce un numero.\n");
+        return;
+    }
+
+    for (int i = 0; i < numClientes; i++) {
+        if (listaClientes[i].id == id_eliminar) {
+            encontrado = 1;
+
+            eliminarClienteBD(db, id_eliminar);
+
+            for (int j = i; j < numClientes - 1; j++) {
+                listaClientes[j] = listaClientes[j + 1];
+            }
+            numClientes--;
+
+            if (numClientes > 0) {
+                listaClientes = (cliente*)realloc(listaClientes, sizeof(cliente) * numClientes);
+            } else {
+                free(listaClientes);
+                listaClientes = NULL;
+            }
+
+            printf("Cliente con ID %d eliminado correctamente.\n\n", id_eliminar);
+            break;
+        }
+    }
+
+
+    if (!encontrado) {
+        printf("No se ha encontrado ningun cliente con el ID %d.\n\n", id_eliminar);
+    }
+}
+
 int MostrarMenuGestionClientes(){
     char linea[10];
     char opcion;
@@ -163,8 +209,8 @@ int MostrarMenuGestionClientes(){
                 ListarClientes(); 
                 break; 
             case '3':
-               
-                break; 
+                 eliminarClienteUI();
+                 break;
             case '4':
                 return 0; 
             case '5':
@@ -244,3 +290,5 @@ int MostrarMenuPrincipal(){
     }while (opcion != '5');
     return 0;
 }
+
+
