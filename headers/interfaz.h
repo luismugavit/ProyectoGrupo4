@@ -1,14 +1,16 @@
 #ifndef INTERFAZ_H
 #define INTERFAZ_H
 
+void registrarOperacion(const char *usuario, const char *operacion);
 void crearCliente();
 void infoCliente(cliente cl);
 void ListarClientes();
-int MostrarMenuGestionClientes();
+void eliminarClienteUI();
+void MostrarMenuGestionClientes();
 
 int MostrarMenuGestionDispositivos();
 
 int MostrarMenuPrincipal();
-void eliminarClienteUI();
+void login();
 
 #endif

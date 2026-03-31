@@ -33,7 +33,8 @@ int main(){
 	printf("CLIENTES CARGADOS: %d\n", numClientes);
 
    // Interfaz en consola 
-	MostrarMenuPrincipal(); 
+    login();
+	//MostrarMenuPrincipal(); 
 
 	//TODO: liberar memoria de todos los MALLOC. Cuando se cierre el programa.
 	//TODO: Borrar cliente, dispositivo, conf de la BD.

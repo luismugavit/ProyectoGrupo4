@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <string.h>
 #include "sqlite3.h"
 #include "../headers/db.h"
@@ -10,7 +11,39 @@
 
 extern cliente* listaClientes;
 extern int numClientes;
+extern sqlite3 *db;
 
+char usuario[10];
+
+
+
+
+void registrarOperacion(const char *usuario, const char *operacion) {
+    
+    FILE *archivoLog = fopen("registros.txt", "a");
+    
+    if (archivoLog == NULL) {
+        printf("Error: No se pudo escribir en el archivo de registros.\n");
+        return; 
+    }
+
+ 
+    time_t t = time(NULL);
+    struct tm tiempoLocal = *localtime(&t);
+
+    fprintf(archivoLog, "%s, %s, %02d/%02d/%d %02d:%02d:%02d\n", 
+            usuario, 
+            operacion,
+            tiempoLocal.tm_mday, 
+            tiempoLocal.tm_mon + 1,     
+            tiempoLocal.tm_year + 1900,  
+            tiempoLocal.tm_hour, 
+            tiempoLocal.tm_min, 
+            tiempoLocal.tm_sec);
+
+ 
+    fclose(archivoLog);
+}
 
 void infoCliente(cliente c){
     printf("\n===========================================\n");
@@ -92,7 +125,81 @@ void ListarClientes() {
     }
 }
 
-extern sqlite3 *db;
+void anadirDispositivo() {
+    char entrada_id[10];      
+    char nombre_nuevo[10];    
+    int idSeleccionado = -1;
+    int indiceCliente = -1;
+    int nuevoIdDispositivo = 1; 
+
+    
+    printf("\n--- LISTA DE CLIENTES DISPONIBLES ---\n");
+    for (int i = 0; i < numClientes; i++) {
+        printf("ID: %d | Nombre: %s\n", listaClientes[i].id, listaClientes[i].nombre);
+    }
+
+   
+    printf("\nIntroduzca el ID del cliente al que desea anadir el dispositivo: ");
+    fflush(stdout);
+    fgets(entrada_id, 10, stdin);
+    idSeleccionado = atoi(entrada_id); 
+
+    
+    for (int i = 0; i < numClientes; i++) {
+        if (listaClientes[i].id == idSeleccionado) {
+            indiceCliente = i;
+            break;
+        }
+    }
+
+    
+    if (indiceCliente == -1) {
+        printf("Error: No se ha encontrado ningun cliente con el ID %d.\n", idSeleccionado);
+        return; 
+    }
+    printf("Introduzca el ID numerico para el nuevo dispositivo: ");
+    fflush(stdout);
+    fgets(entrada_id, 10, stdin);
+    nuevoIdDispositivo = atoi(entrada_id);
+    
+    printf("Introduzca el nombre del nuevo dispositivo para '%s': ", listaClientes[indiceCliente].nombre);
+    fflush(stdout);
+    fgets(nombre_nuevo, 100, stdin);
+    
+  
+    nombre_nuevo[strcspn(nombre_nuevo, "\n")] = 0;
+
+ 
+
+   
+    listaClientes[indiceCliente].numDispositivos++;
+    int totalDisp = listaClientes[indiceCliente].numDispositivos;
+    
+    listaClientes[indiceCliente].listaDispositivos = (dispositivo*) realloc(
+        listaClientes[indiceCliente].listaDispositivos, 
+        totalDisp * sizeof(dispositivo)
+    );
+
+   
+    listaClientes[indiceCliente].listaDispositivos[totalDisp - 1].id = nuevoIdDispositivo;
+    strcpy(listaClientes[indiceCliente].listaDispositivos[totalDisp - 1].nombre, nombre_nuevo);
+    
+    
+    listaClientes[indiceCliente].listaDispositivos[totalDisp - 1].num_configs = 0;
+    listaClientes[indiceCliente].listaDispositivos[totalDisp - 1].configs = NULL;
+
+    printf("\nExito: Dispositivo '%s' (ID: %d) anadido correctamente al cliente '%s'.\n", 
+           nombre_nuevo, nuevoIdDispositivo, listaClientes[indiceCliente].nombre);
+
+    // ====================================================================
+    // AQUI DEBERIAS HACER EL INSERT EN SQLITE PARA QUE SE GUARDE EN LA BD
+    // Ej: "INSERT INTO Dispositivo (ID_DISPOSITIVO, ID_CLIENTE, NOMBRE_DISPOSITIVO) 
+    //      VALUES (nuevoIdDispositivo, idSeleccionado, nombre_nuevo);"
+    // ====================================================================
+
+    dispositivo nuevo_disp = listaClientes[indiceCliente].listaDispositivos[totalDisp - 1];
+    insertDispositivoDB(db, nuevo_disp, idSeleccionado);
+}
 
 void crearCliente(){
     cliente cNew;
@@ -129,9 +236,10 @@ void crearCliente(){
     numClientes++;
 
     insertClienteBD(db, cNew);
+    registrarOperacion(usuario,"Crear cliente");
 }
 
-extern int eliminarClienteBD(sqlite3 *db, int idCliente);
+
 
 void eliminarClienteUI() {
     char linea[10];
@@ -177,7 +285,7 @@ void eliminarClienteUI() {
     }
 }
 
-int MostrarMenuGestionClientes(){
+void MostrarMenuGestionClientes(){
     char linea[10];
     char opcion;
     
@@ -212,7 +320,8 @@ int MostrarMenuGestionClientes(){
                  eliminarClienteUI();
                  break;
             case '4':
-                return 0; 
+                
+                break; 
             case '5':
                 exit(0);  
                 break;
@@ -221,30 +330,54 @@ int MostrarMenuGestionClientes(){
                 break;
         }
     } while (opcion != '4' && opcion != '5');
-
-    return 0;
+  
+    return ;
 
 }
 
 
 
 int MostrarMenuGestionDispositivos(){
-    printf("===========================================\n");
-    printf("                GESTION DISPOSITIVOS\n");
-    printf("===========================================\n\n");
-
-    printf("1. Anyadir dispositivos\n");
-    printf("2. Listar Dispositivos\n");
-    printf("3. Eliminar Dispositivos\n");
-    printf("4. Volver\n");
-    printf("5. Salir\n");
-
-    printf("Seleccione una opcion > ");
-
-    fflush(stdout);
+    char opcion;
     char linea[10];
-    fgets(linea, 10, stdin);
-   
+    
+    
+        do{
+            printf("===========================================\n");
+            printf("                GESTION DISPOSITIVOS\n");
+            printf("===========================================\n\n");
+
+            printf("1. Anadir dispositivos\n");
+            printf("2. Listar Dispositivos\n");
+            printf("3. Eliminar Dispositivos\n");
+            printf("4. Volver\n");
+            printf("5. Salir\n");
+
+            printf("Seleccione una opcion > ");
+
+            fflush(stdout);
+            char linea[10];
+            fgets(linea, 10, stdin);
+            opcion = *linea;
+            switch (opcion)
+            {
+                case '1':
+                    anadirDispositivo();
+                    opcion = 0;
+                    break;
+                case '2':
+                   
+                    opcion = 0;
+                    break; 
+                case '3':
+                    ;
+                    break; 
+                case '4':
+                    
+                    break;  
+            }
+        }while (opcion != '5');
+        
 
    
     return 0;
@@ -276,9 +409,11 @@ int MostrarMenuPrincipal(){
         {
             case '1':
                 MostrarMenuGestionClientes();
+                opcion = 0;
                 break;
             case '2':
                 MostrarMenuGestionDispositivos();
+                opcion = 0;
                 break; 
             case '3':
                 printf("a");
@@ -291,4 +426,69 @@ int MostrarMenuPrincipal(){
     return 0;
 }
 
+void login() {
+    
+    char contrasena[10];
+    int autenticado = 0;
+
+    printf("===========================================\n");
+    printf("             INICIO DE SESION\n");
+    printf("===========================================\n\n");
+
+    while (!autenticado) {
+
+        printf("Usuario: ");
+        fflush(stdout);
+        fgets(usuario, sizeof(usuario), stdin);
+        usuario[strcspn((const char *)usuario, "\n")] = 0;
+
+        printf("Contrasena: ");
+        fflush(stdout);
+        fgets(contrasena, sizeof(contrasena), stdin);
+        contrasena[strcspn((const char *)contrasena, "\n")] = 0;
+
+        FILE *archivo = fopen("src/usuarios.txt", "r");
+        
+
+        if (archivo == NULL) {
+            printf("\nError critico: No se pudo abrir el archivo 'usuarios.txt'.\n");
+            printf("Asegurese de que el archivo existe en la ruta correcta.\n");
+            exit(1); 
+        }
+
+        char linea[100];
+        char file_user[50];
+        char file_pass[50];
+        
+
+        while (fgets(linea, sizeof(linea), archivo) != NULL) {
+            
+
+            if (sscanf(linea, "%49s %49s", file_user, file_pass) == 2) {
+                
+                
+                if (strcmp(usuario, file_user) == 0 && strcmp(contrasena, file_pass) == 0) {
+                    
+                    autenticado = 1;
+                    break; 
+                }
+            }
+        }
+
+        fclose(archivo);
+
+        if (autenticado) {
+            printf("\nAcceso concedido. Bienvenido, %s.\n\n", usuario);
+        } else {
+            printf("\nError: Usuario o contrasena incorrectos. Vuelva a intentarlo.\n\n");
+        }
+    }
+
+   
+    
+    MostrarMenuPrincipal();
+    
+    
+    
+}
 

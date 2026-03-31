@@ -22,7 +22,7 @@ int insertClienteBD(sqlite3 *db, cliente c) {
 	result = sqlite3_prepare_v2(db, sql_cliente, strlen(sql_cliente) + 1, &stmt, NULL) ;
 
 	if (result != SQLITE_OK) {
-		printf("Error preparing statement (INSERT)\n");
+		printf("Error INSERT\n");
 		printf("%s\n", sqlite3_errmsg(db));
 		return result;
 	}
@@ -34,7 +34,7 @@ int insertClienteBD(sqlite3 *db, cliente c) {
 
 	result = sqlite3_step(stmt);
 	if (result != SQLITE_DONE) {
-		printf("Error inserting new data into country table\n");
+		printf("Error \n");
 		return result;
 	}
 
@@ -44,7 +44,7 @@ int insertClienteBD(sqlite3 *db, cliente c) {
 
 	printf("cliente: %s insertado (INSERT)\n", c.nombre);
 	if (result != SQLITE_OK) {
-		printf("Error finalizing statement (INSERT)\n");
+		printf("Error\n");
 		printf("%s\n", sqlite3_errmsg(db));
 		return result;
 	}
@@ -58,7 +58,7 @@ int insertClienteBD(sqlite3 *db, cliente c) {
         result = sqlite3_prepare_v2(db, sql_disp, -1, &stmt, NULL);
         
         if (result != SQLITE_OK) {
-            printf("Error preparing statement (INSERT Dispositivo): %s\n", sqlite3_errmsg(db));
+            printf("Error (INSERT Dispositivo): %s\n", sqlite3_errmsg(db));
             continue;
         }
 
@@ -69,7 +69,7 @@ int insertClienteBD(sqlite3 *db, cliente c) {
 
       
         if (sqlite3_step(stmt) != SQLITE_DONE) {
-            printf("Error inserting Dispositivo %d\n", disp.id);
+            printf("Error Dispositivo %d\n", disp.id);
         }
         sqlite3_finalize(stmt);
 		printf("Dispositivo: %s insertado (INSERT)\n", disp.nombre);
@@ -81,7 +81,7 @@ int insertClienteBD(sqlite3 *db, cliente c) {
             result = sqlite3_prepare_v2(db, sql_conf, -1, &stmt, NULL);
 
             if (result != SQLITE_OK) {
-                printf("Error preparing statement (INSERT Configuracion): %s\n", sqlite3_errmsg(db));
+                printf("Error (INSERT Configuracion): %s\n", sqlite3_errmsg(db));
                 continue;
             }
 
@@ -106,6 +106,71 @@ int insertClienteBD(sqlite3 *db, cliente c) {
 	return SQLITE_OK;
 
 }
+
+int insertDispositivoDB(sqlite3 *db, dispositivo disp, int id_cliente) {
+    sqlite3_stmt *stmt;
+    int result;
+
+    // ==========================================
+    // 1. INSERTAR EL DISPOSITIVO
+    // ==========================================
+    const char *sql_disp = "INSERT INTO Dispositivo (ID_DISPOSITIVO, NOMBRE_DISPOSITIVO, ID_CLIENTE) VALUES (?, ?, ?)";
+    result = sqlite3_prepare_v2(db, sql_disp, -1, &stmt, NULL);
+    
+    if (result != SQLITE_OK) {
+        printf("Error (PREPARE Dispositivo): %s\n", sqlite3_errmsg(db));
+        return result; // Salimos si no se puede preparar la consulta
+    }
+
+    // Vinculamos los valores a los interrogantes (?)
+    sqlite3_bind_int(stmt, 1, disp.id);
+    sqlite3_bind_text(stmt, 2, disp.nombre, -1, SQLITE_TRANSIENT);
+    sqlite3_bind_int(stmt, 3, id_cliente); 
+
+    // Ejecutamos la consulta
+    result = sqlite3_step(stmt);
+    if (result != SQLITE_DONE) {
+        printf("Error al insertar Dispositivo %d: %s\n", disp.id, sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return result; 
+    }
+    
+    sqlite3_finalize(stmt);
+    printf("Dispositivo: %s insertado correctamente en BD.\n", disp.nombre);
+
+    // ==========================================
+    // 2. INSERTAR SUS CONFIGURACIONES (SI LAS HAY)
+    // ==========================================
+    for (int j = 0; j < disp.num_configs; j++) {
+        configuracion conf = disp.configs[j];
+
+        const char *sql_conf = "INSERT INTO Configuracion (VERSION, ID_DISPOSITIVO, FECHA, RUTA) VALUES (?, ?, ?, ?)";
+        result = sqlite3_prepare_v2(db, sql_conf, -1, &stmt, NULL);
+
+        if (result != SQLITE_OK) {
+            printf("Error (PREPARE Configuracion): %s\n", sqlite3_errmsg(db));
+            continue; // Si falla esta, intentamos con la siguiente configuración
+        }
+
+        // Vinculamos los valores
+        sqlite3_bind_int(stmt, 1, conf.version);
+        sqlite3_bind_int(stmt, 2, disp.id);
+        sqlite3_bind_text(stmt, 3, conf.fecha, -1, SQLITE_TRANSIENT);
+        sqlite3_bind_text(stmt, 4, conf.ruta, -1, SQLITE_TRANSIENT);
+
+        // Ejecutamos
+        if (sqlite3_step(stmt) != SQLITE_DONE) {
+            printf("Error insertando Configuracion v%d para Dispositivo %d\n", conf.version, disp.id);
+        } else {
+            printf("Configuracion v%d de %s insertada (INSERT)\n", conf.version, disp.nombre);
+        }
+
+        sqlite3_finalize(stmt);
+    }
+
+    return SQLITE_OK;
+}
+
 
 int contarFilas(sqlite3 *db, char *consulta, int bind_id){
 
@@ -196,8 +261,26 @@ cliente* cargarBD(sqlite3 *db, int *totalClientes){
                     while (sqlite3_step(stmtConf) == SQLITE_ROW) {
                         listaClientes[i].listaDispositivos[j].configs[k].version = sqlite3_column_int(stmtConf, 0);
                         strcpy(listaClientes[i].listaDispositivos[j].configs[k].fecha, (const char*)sqlite3_column_text(stmtConf, 1));
+                        
                         strcpy(listaClientes[i].listaDispositivos[j].configs[k].ruta, (const char*)sqlite3_column_text(stmtConf, 2));
+
+                      
+                        FILE *archivoConf = fopen(listaClientes[i].listaDispositivos[j].configs[k].ruta, "r");
+                        
+                        if (archivoConf == NULL) {
+                            archivoConf = fopen(listaClientes[i].listaDispositivos[j].configs[k].ruta, "w");
+                            
+                            if (archivoConf != NULL) {
+                                fclose(archivoConf);
+                            } 
+                               // printf("Advertencia: No se pudo crear )
+                               
+                            
+                        } else {
+                            fclose(archivoConf);
+                        }
                         k++;
+
                     }
                     sqlite3_finalize(stmtConf);
 				
