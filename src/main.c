@@ -37,7 +37,7 @@ int main(){
     login();
 	
 	//TODO: LOS REGISTROS HAN DE REGISTRAR DETALLE SOBRE LAS OPERCIONES (QUE CLIENTE SE HA ANADIDO, QUE DISPOSITIVO SE HA BORRADO, ETC..)
-	//TODO(OPCIONAL): liberar memoria de todos los MALLOC. Cuando se cierre el programa.
+	//TODO: liberar memoria de todos los MALLOC. Cuando se cierre el programa.
 	//TODO(OPCIONAL): Cambiar datos de clientes, dispositivos, configuraciones.
 
 //DATOS DE PRUEBA
