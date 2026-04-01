@@ -111,23 +111,21 @@ int insertDispositivoDB(sqlite3 *db, dispositivo disp, int id_cliente) {
     sqlite3_stmt *stmt;
     int result;
 
-    // ==========================================
-    // 1. INSERTAR EL DISPOSITIVO
-    // ==========================================
+
     const char *sql_disp = "INSERT INTO Dispositivo (ID_DISPOSITIVO, NOMBRE_DISPOSITIVO, ID_CLIENTE) VALUES (?, ?, ?)";
     result = sqlite3_prepare_v2(db, sql_disp, -1, &stmt, NULL);
     
     if (result != SQLITE_OK) {
         printf("Error (PREPARE Dispositivo): %s\n", sqlite3_errmsg(db));
-        return result; // Salimos si no se puede preparar la consulta
+        return result; 
     }
 
-    // Vinculamos los valores a los interrogantes (?)
+
     sqlite3_bind_int(stmt, 1, disp.id);
     sqlite3_bind_text(stmt, 2, disp.nombre, -1, SQLITE_TRANSIENT);
     sqlite3_bind_int(stmt, 3, id_cliente); 
 
-    // Ejecutamos la consulta
+
     result = sqlite3_step(stmt);
     if (result != SQLITE_DONE) {
         printf("Error al insertar Dispositivo %d: %s\n", disp.id, sqlite3_errmsg(db));
@@ -138,9 +136,7 @@ int insertDispositivoDB(sqlite3 *db, dispositivo disp, int id_cliente) {
     sqlite3_finalize(stmt);
     printf("Dispositivo: %s insertado correctamente en BD.\n", disp.nombre);
 
-    // ==========================================
-    // 2. INSERTAR SUS CONFIGURACIONES (SI LAS HAY)
-    // ==========================================
+
     for (int j = 0; j < disp.num_configs; j++) {
         configuracion conf = disp.configs[j];
 
@@ -149,16 +145,16 @@ int insertDispositivoDB(sqlite3 *db, dispositivo disp, int id_cliente) {
 
         if (result != SQLITE_OK) {
             printf("Error (PREPARE Configuracion): %s\n", sqlite3_errmsg(db));
-            continue; // Si falla esta, intentamos con la siguiente configuración
+            continue; 
         }
 
-        // Vinculamos los valores
+     
         sqlite3_bind_int(stmt, 1, conf.version);
         sqlite3_bind_int(stmt, 2, disp.id);
         sqlite3_bind_text(stmt, 3, conf.fecha, -1, SQLITE_TRANSIENT);
         sqlite3_bind_text(stmt, 4, conf.ruta, -1, SQLITE_TRANSIENT);
 
-        // Ejecutamos
+      
         if (sqlite3_step(stmt) != SQLITE_DONE) {
             printf("Error insertando Configuracion v%d para Dispositivo %d\n", conf.version, disp.id);
         } else {

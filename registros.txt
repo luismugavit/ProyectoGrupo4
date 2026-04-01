@@ -3,3 +3,27 @@ admin, Crear cliente, 01/04/2026 13:47:52
 admin, Log-in, 01/04/2026 16:26:29
 admin, Log-in, 01/04/2026 16:31:38
 admin, Crear cliente, 01/04/2026 16:31:52
+admin, Log-in, 01/04/2026 16:43:06
+admin, Crear cliente, 01/04/2026 16:44:16
+admin, Cliente eliminado, 01/04/2026 16:47:08
+admin, Log-in, 01/04/2026 16:49:30
+admin, Log-in, 01/04/2026 16:52:08
+admin, Log-in, 01/04/2026 16:52:59
+admin, Log-in, 01/04/2026 16:53:37
+admin, Log-in, 01/04/2026 16:54:07
+admin, Log-in, 01/04/2026 16:56:47
+admin, Log-in, 01/04/2026 16:58:59
+admin, Log-in, 01/04/2026 16:59:46
+admin, Log-in, 01/04/2026 17:00:44
+admin, Log-in, 01/04/2026 17:01:31
+admin, Log-in, 01/04/2026 17:02:04
+admin, Log-in, 01/04/2026 17:02:38
+admin, Log-in, 01/04/2026 17:05:11
+admin, Log-in, 01/04/2026 17:13:31
+admin, Dispositivo anadido, 01/04/2026 17:14:09
+admin, Log-in, 01/04/2026 17:19:58
+admin, Log-in, 01/04/2026 17:20:17
+admin, Cliente eliminado, 01/04/2026 17:20:25
+admin, Crear cliente, 01/04/2026 17:20:51
+admin, Dispositivo anadido, 01/04/2026 17:21:08
+admin, Configuracion Anadida, 01/04/2026 17:23:26

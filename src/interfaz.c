@@ -184,13 +184,11 @@ void anadirDispositivo() {
         printf("ID: %d | Nombre: %s\n", listaClientes[i].id, listaClientes[i].nombre);
     }
 
-   
     printf("\nIntroduzca el ID del cliente al que desea anadir el dispositivo: ");
     fflush(stdout);
     fgets(entrada_id, 10, stdin);
     idSeleccionado = atoi(entrada_id); 
 
-    
     for (int i = 0; i < numClientes; i++) {
         if (listaClientes[i].id == idSeleccionado) {
             indiceCliente = i;
@@ -198,11 +196,11 @@ void anadirDispositivo() {
         }
     }
 
-    
     if (indiceCliente == -1) {
         printf("Error: No se ha encontrado ningun cliente con el ID %d.\n", idSeleccionado);
         return; 
     }
+
     printf("Introduzca el ID numerico para el nuevo dispositivo: ");
     fflush(stdout);
     fgets(entrada_id, 10, stdin);
@@ -210,81 +208,84 @@ void anadirDispositivo() {
     
     printf("Introduzca el nombre del nuevo dispositivo para '%s': ", listaClientes[indiceCliente].nombre);
     fflush(stdout);
-    fgets(nombre_nuevo, 100, stdin);
-    
-  
+    fgets(nombre_nuevo, 100, stdin); 
     nombre_nuevo[strcspn(nombre_nuevo, "\n")] = 0;
 
- 
 
-   
-    listaClientes[indiceCliente].numDispositivos++;
-    int totalDisp = listaClientes[indiceCliente].numDispositivos;
     
-    listaClientes[indiceCliente].listaDispositivos = (dispositivo*) realloc(
+    int totalDisp = listaClientes[indiceCliente].numDispositivos + 1;
+    
+
+    dispositivo* temp = (dispositivo*) realloc(
         listaClientes[indiceCliente].listaDispositivos, 
         totalDisp * sizeof(dispositivo)
     );
 
-   
-    listaClientes[indiceCliente].listaDispositivos[totalDisp - 1].id = nuevoIdDispositivo;
-    strcpy(listaClientes[indiceCliente].listaDispositivos[totalDisp - 1].nombre, nombre_nuevo);
+    if (temp == NULL) {
+        printf("Error critico: No se pudo asignar memoria para el nuevo dispositivo.\n");
+        return; 
+    }
+
+    listaClientes[indiceCliente].listaDispositivos = temp;
+    listaClientes[indiceCliente].numDispositivos = totalDisp;
+
+    int indiceNuevoDisp = totalDisp - 1;
+
+    listaClientes[indiceCliente].listaDispositivos[indiceNuevoDisp].id = nuevoIdDispositivo;
+    strcpy(listaClientes[indiceCliente].listaDispositivos[indiceNuevoDisp].nombre, nombre_nuevo);
     
-    
-    listaClientes[indiceCliente].listaDispositivos[totalDisp - 1].num_configs = 0;
-    listaClientes[indiceCliente].listaDispositivos[totalDisp - 1].configs = NULL;
+    listaClientes[indiceCliente].listaDispositivos[indiceNuevoDisp].num_configs = 0;
+    listaClientes[indiceCliente].listaDispositivos[indiceNuevoDisp].configs = NULL;
 
     printf("\nExito: Dispositivo '%s' (ID: %d) anadido correctamente al cliente '%s'.\n", 
            nombre_nuevo, nuevoIdDispositivo, listaClientes[indiceCliente].nombre);
 
-    // ====================================================================
-    // AQUI DEBERIAS HACER EL INSERT EN SQLITE PARA QUE SE GUARDE EN LA BD
-    // Ej: "INSERT INTO Dispositivo (ID_DISPOSITIVO, ID_CLIENTE, NOMBRE_DISPOSITIVO) 
-    //      VALUES (nuevoIdDispositivo, idSeleccionado, nombre_nuevo);"
-    // ====================================================================
-
-    dispositivo nuevo_disp = listaClientes[indiceCliente].listaDispositivos[totalDisp - 1];
+    dispositivo nuevo_disp = listaClientes[indiceCliente].listaDispositivos[indiceNuevoDisp];
+    
     insertDispositivoDB(db, nuevo_disp, idSeleccionado);
-
-    registrarOperacion(usuario,"Dispositivo anadido");
+    
+    registrarOperacion(usuario, "Dispositivo anadido");
 }
 
 void crearCliente(){
     cliente cNew;
     char nombre[100];
-    int newID = 0;
+    char str[100];
     
-    printf("Introduzca el ID del cliente: ");
+    printf("\nIntroduzca el ID del cliente: ");
     fflush(stdout);
-
-
-    char str[10];
-    fgets(str, 9, stdin);
-    sscanf(str, "%d", &newID);
-
-    //fgets(&newID,10,stdin);
-    // if(sscanf(newID,"%d", &cNew.id) != 1){
-    //     printf("Error\n");
-    //     return;
-    // }
+    fgets(str, sizeof(str), stdin);
     
+    cNew.id = atoi(str);
+
     printf("Introduzca el Nombre del cliente: ");
     fflush(stdout);
-    
     fgets(nombre, sizeof(nombre), stdin);
+    nombre[strcspn(nombre, "\n")] = 0; 
 
-    nombre[strcspn(nombre, "\n")] = 0;
+    strcpy(cNew.nombre, nombre);
 
+
+    cNew.numDispositivos = 0;
+    cNew.listaDispositivos = NULL; 
+
+    cliente* temp = (cliente*) realloc(listaClientes, sizeof(cliente) * (numClientes + 1));
     
-    cliente_init(&cNew, newID, nombre);
+    if (temp == NULL) {
+        printf("Error crítico: No se pudo asignar memoria para el nuevo cliente.\n");
+        return; 
+    }
     
-
-    listaClientes = (cliente*)realloc(listaClientes, sizeof(cliente)*(numClientes+1));
+    
+    listaClientes = temp;
     listaClientes[numClientes] = cNew;
     numClientes++;
 
+   
     insertClienteBD(db, cNew);
-    registrarOperacion(usuario,"Crear cliente");
+    registrarOperacion(usuario, "Crear cliente");
+    
+    printf("\nExito: Cliente '%s' (ID: %d) creado correctamente.\n", cNew.nombre, cNew.id);
 }
 
 void anadirConfiguracion() {
@@ -336,7 +337,7 @@ void anadirConfiguracion() {
     FILE *archivo = fopen(ruta_nueva, "w");
     if (archivo == NULL) {
         printf("Error: No se pudo crear el archivo. Verifica que la carpeta 'src/confs_cliente' exista.\n");
-        return; // Salimos de la función para no corromper los datos si falla el archivo
+        return; 
     }
 
     disp->num_configs++;
