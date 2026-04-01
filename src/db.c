@@ -171,6 +171,44 @@ int insertDispositivoDB(sqlite3 *db, dispositivo disp, int id_cliente) {
     return SQLITE_OK;
 }
 
+int insertConfiguracionDB(sqlite3 *db, configuracion conf, int id_dispositivo) {
+    sqlite3_stmt *stmt;
+    int result;
+
+   
+    const char *sql = "INSERT INTO Configuracion (ID_DISPOSITIVO, VERSION, FECHA, RUTA) VALUES (?, ?, ?, ?);";
+    
+    result = sqlite3_prepare_v2(db, sql, -1, &stmt, NULL);
+    if (result != SQLITE_OK) {
+        printf("Error (PREPARE INSERT Configuracion): %s\n", sqlite3_errmsg(db));
+        return result; 
+    }
+
+
+    sqlite3_bind_int(stmt, 1, id_dispositivo);
+    
+
+    sqlite3_bind_int(stmt, 2, conf.version);
+    
+
+    sqlite3_bind_text(stmt, 3, conf.fecha, -1, SQLITE_STATIC);
+    
+
+    sqlite3_bind_text(stmt, 4, conf.ruta, -1, SQLITE_STATIC);
+
+    result = sqlite3_step(stmt);
+    if (result != SQLITE_DONE) {
+        printf("Error al insertar la Configuracion en la BD: %s\n", sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return result; 
+    }
+
+    sqlite3_finalize(stmt);
+    
+    printf("Sincronizacion completada: Configuracion v%d guardada en la Base de Datos.\n", conf.version);
+
+    return SQLITE_OK;
+}
 
 int contarFilas(sqlite3 *db, char *consulta, int bind_id){
 
@@ -212,6 +250,33 @@ int eliminarClienteBD(sqlite3 *db, int idCliente) {
 
     sqlite3_finalize(stmt);
     return result;
+}
+
+int eliminarDispositivoDB(sqlite3 *db, int id_dispositivo) {
+    sqlite3_stmt *stmt;
+    int result;
+
+    const char *sql_disp = "DELETE FROM Dispositivo WHERE ID_DISPOSITIVO = ?";
+    result = sqlite3_prepare_v2(db, sql_disp, -1, &stmt, NULL);
+    
+    if (result != SQLITE_OK) {
+        printf("Error (PREPARE DELETE Dispositivo): %s\n", sqlite3_errmsg(db));
+        return result; 
+    }
+
+    sqlite3_bind_int(stmt, 1, id_dispositivo);
+
+    result = sqlite3_step(stmt);
+    if (result != SQLITE_DONE) {
+        printf("Error al eliminar Dispositivo %d de la BD: %s\n", id_dispositivo, sqlite3_errmsg(db));
+        sqlite3_finalize(stmt);
+        return result; 
+    }
+    
+    sqlite3_finalize(stmt);
+    printf("Sincronizacion completada: Dispositivo (y sus configuraciones) eliminado de la Base de Datos.\n");
+
+    return SQLITE_OK;
 }
 
 cliente* cargarBD(sqlite3 *db, int *totalClientes){

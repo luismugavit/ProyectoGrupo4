@@ -21,6 +21,7 @@ int main(){
 
 	
 	int result = sqlite3_open("db/testserverconfs.sqlite", &db);
+	sqlite3_exec(db, "PRAGMA foreign_keys = ON;", NULL, NULL, NULL);
 	if (result != SQLITE_OK) {
 		printf("Error opening database\n");
 		return result;

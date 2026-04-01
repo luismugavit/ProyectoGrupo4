@@ -80,6 +80,8 @@ void infoCliente(cliente c){
         }
     }
 }
+
+
 void ListarClientes() {
     printf("\n--- Lista de Clientes ---\n");
     printf("ID / Nombre / NumDispositivos\n");
@@ -123,6 +125,54 @@ void ListarClientes() {
     if (!encontrado) {
         printf("\nError: No se ha encontrado ningun cliente con el ID %d.\n", id_seleccionado);
     }
+}
+
+void listarDispositivos() {
+    printf("\n=======================================================================\n");
+    printf("                        LISTA DE DISPOSITIVOS\n");
+    printf("=======================================================================\n");
+    printf("%-6s | %-20s | %-20s | %-15s\n", "ID", "Nombre", "Cliente", "Version Actual");
+    printf("-----------------------------------------------------------------------\n");
+
+    int total = 0;
+
+    for (int i = 0; i < numClientes; i++) {
+        
+        for (int j = 0; j < listaClientes[i].numDispositivos; j++) {
+            
+            dispositivo *disp = &listaClientes[i].listaDispositivos[j];
+
+            int version_actual = 0;
+            int tiene_config = 0;
+
+            for (int k = 0; k < disp->num_configs; k++) {
+                if (disp->configs[k].version > version_actual) {
+                    version_actual = disp->configs[k].version;
+                    tiene_config = 1; 
+                }
+            }
+
+            if (tiene_config) {
+                printf("%-6d | %-20s | %-20s | v%-14d\n", 
+                       disp->id, 
+                       disp->nombre, 
+                       listaClientes[i].nombre, 
+                       version_actual);
+            } else {
+                printf("%-6d | %-20s | %-20s | %-15s\n", 
+                       disp->id, 
+                       disp->nombre, 
+                       listaClientes[i].nombre, 
+                       "Sin conf.");
+            }
+            total++;
+        }
+    }
+
+    if (total == 0) {
+        printf("No hay ningun dispositivo registrado en el sistema.\n");
+    }
+    printf("=======================================================================\n");
 }
 
 void anadirDispositivo() {
@@ -201,6 +251,8 @@ void anadirDispositivo() {
     insertDispositivoDB(db, nuevo_disp, idSeleccionado);
 }
 
+
+
 void crearCliente(){
     cliente cNew;
     char nombre[100];
@@ -239,7 +291,78 @@ void crearCliente(){
     registrarOperacion(usuario,"Crear cliente");
 }
 
+void anadirConfiguracion() {
+    char entrada_id[10];
+    int idSeleccionado = -1;
+    int indiceCliente = -1;
+    int indiceDispositivo = -1;
 
+    printf("\nIntroduzca el ID del dispositivo al que desea anadir una configuracion: ");
+    fflush(stdout);
+    fgets(entrada_id, 10, stdin);
+    idSeleccionado = atoi(entrada_id);
+
+    for (int i = 0; i < numClientes; i++) {
+        for (int j = 0; j < listaClientes[i].numDispositivos; j++) {
+            if (listaClientes[i].listaDispositivos[j].id == idSeleccionado) {
+                indiceCliente = i;
+                indiceDispositivo = j;
+                break;
+            }
+        }
+        if (indiceCliente != -1) break; 
+    }
+
+    if (indiceCliente == -1) {
+        printf("Error: No se ha encontrado ningun dispositivo con el ID %d.\n", idSeleccionado);
+        return;
+    }
+
+    cliente *cli = &listaClientes[indiceCliente];
+    dispositivo *disp = &cli->listaDispositivos[indiceDispositivo];
+
+    int max_version = 0;
+    for (int k = 0; k < disp->num_configs; k++) {
+        if (disp->configs[k].version > max_version) {
+            max_version = disp->configs[k].version;
+        }
+    }
+    int nueva_version = max_version + 1;
+
+    time_t t = time(NULL);
+    struct tm tm = *localtime(&t);
+    char fecha_actual[256]; 
+    sprintf(fecha_actual, "%02d/%02d/%04d", tm.tm_mday, tm.tm_mon + 1, tm.tm_year + 1900);
+
+    char ruta_nueva[256]; 
+    sprintf(ruta_nueva, "src/confs_cliente/%s_%s_v%d.txt", cli->nombre, disp->nombre, nueva_version);
+
+    FILE *archivo = fopen(ruta_nueva, "w");
+    if (archivo == NULL) {
+        printf("Error: No se pudo crear el archivo. Verifica que la carpeta 'src/confs_cliente' exista.\n");
+        return; // Salimos de la función para no corromper los datos si falla el archivo
+    }
+
+    disp->num_configs++;
+    int totalConfigs = disp->num_configs;
+    disp->configs = (configuracion*) realloc(disp->configs, totalConfigs * sizeof(configuracion));
+
+    int ultimo = totalConfigs - 1;
+
+    disp->configs[ultimo].version = nueva_version;
+    strcpy(disp->configs[ultimo].fecha, fecha_actual);
+    strcpy(disp->configs[ultimo].ruta, ruta_nueva);
+
+
+    printf("\n======================================================\n");
+    printf("Exito: Configuracion anadida al dispositivo '%s'.\n", disp->nombre);
+    printf("Version : v%d\n", nueva_version);
+    printf("Fecha   : %s\n", fecha_actual);
+    printf("Ruta    : %s\n", ruta_nueva);
+    printf("======================================================\n");
+
+    insertConfiguracionDB(db, disp->configs[ultimo], idSeleccionado);
+}
 
 void eliminarClienteUI() {
     char linea[10];
@@ -252,7 +375,7 @@ void eliminarClienteUI() {
 
     fgets(linea, 10, stdin);
     if (sscanf(linea, "%d", &id_eliminar) != 1) {
-        printf("❌ Error: ID no valido. Introduce un numero.\n");
+        printf("Error: ID no valido. Introduce un numero.\n");
         return;
     }
 
@@ -282,6 +405,77 @@ void eliminarClienteUI() {
 
     if (!encontrado) {
         printf("No se ha encontrado ningun cliente con el ID %d.\n\n", id_eliminar);
+    }
+}
+
+void eliminarDispositivo() {
+    char entrada_id[10];      
+    char confirmacion[10];    
+    
+    int idSeleccionado = -1;
+    int indiceCliente = -1;
+    int indiceDispositivo = -1;
+
+    
+    printf("\nIntroduzca el ID del dispositivo que desea eliminar: ");
+    fflush(stdout);
+    fgets(entrada_id, 10, stdin);
+    idSeleccionado = atoi(entrada_id);
+
+    for (int i = 0; i < numClientes; i++) {
+        for (int j = 0; j < listaClientes[i].numDispositivos; j++) {
+            if (listaClientes[i].listaDispositivos[j].id == idSeleccionado) {
+                indiceCliente = i;
+                indiceDispositivo = j;
+                break;
+            }
+        }
+        if (indiceCliente != -1) break; 
+    }
+
+    if (indiceCliente == -1) {
+        printf("Error: No se ha encontrado ningun dispositivo con el ID %d.\n", idSeleccionado);
+        return;
+    }
+
+    dispositivo *disp = &listaClientes[indiceCliente].listaDispositivos[indiceDispositivo];
+    
+    printf("\nSe ha encontrado el dispositivo '%s' (ID: %d) del cliente '%s'.\n", 
+           disp->nombre, disp->id, listaClientes[indiceCliente].nombre);
+    printf("Esta seguro de que desea eliminarlo permanentemente? (s/n): ");
+    fflush(stdout);
+    
+    fgets(confirmacion, 10, stdin);
+    
+    if (confirmacion[0] == 's' || confirmacion[0] == 'S') {
+        
+        if (disp->configs != NULL) {
+            free(disp->configs);
+        }
+
+        for (int k = indiceDispositivo; k < listaClientes[indiceCliente].numDispositivos - 1; k++) {
+            listaClientes[indiceCliente].listaDispositivos[k] = listaClientes[indiceCliente].listaDispositivos[k + 1];
+        }
+
+        listaClientes[indiceCliente].numDispositivos--;
+        int totalDisp = listaClientes[indiceCliente].numDispositivos;
+
+        if (totalDisp > 0) {
+            listaClientes[indiceCliente].listaDispositivos = (dispositivo*) realloc(
+                listaClientes[indiceCliente].listaDispositivos, 
+                totalDisp * sizeof(dispositivo)
+            );
+        } else {
+            free(listaClientes[indiceCliente].listaDispositivos);
+            listaClientes[indiceCliente].listaDispositivos = NULL;
+        }
+
+        printf("Exito: Dispositivo eliminado correctamente de la memoria.\n");
+
+        eliminarDispositivoDB(db, idSeleccionado);
+
+    } else {
+        printf("Operacion cancelada\n");
     }
 }
 
@@ -350,7 +544,7 @@ int MostrarMenuGestionDispositivos(){
             printf("1. Anadir dispositivos\n");
             printf("2. Listar Dispositivos\n");
             printf("3. Eliminar Dispositivos\n");
-            printf("4. Volver\n");
+            printf("4. Anadir Configuracion\n");
             printf("5. Salir\n");
 
             printf("Seleccione una opcion > ");
@@ -366,14 +560,15 @@ int MostrarMenuGestionDispositivos(){
                     opcion = 0;
                     break;
                 case '2':
-                   
+                    listarDispositivos();
                     opcion = 0;
                     break; 
                 case '3':
-                    ;
+                    eliminarDispositivo();
                     break; 
                 case '4':
-                    
+                    anadirConfiguracion();
+                    opcion = 0;
                     break;  
             }
         }while (opcion != '5');
@@ -385,45 +580,44 @@ int MostrarMenuGestionDispositivos(){
 
 int MostrarMenuPrincipal(){
     
-    
-
-    printf("===========================================\n");
-    printf("                MENU PRINCIPAL\n");
-    printf("===========================================\n\n");
-
-    printf("1. Gestion de clientes\n");
-    printf("2. Gestion de dispositivos\n");
-    printf("3. Gestion de configuraciones\n");
-    printf("4. Ver registros del sistema\n");
-    printf("5. Salir\n");
-
-    printf("Seleccione una opcion > ");
-
-    fflush(stdout);
-    char linea[10];
-    fgets(linea, 10, stdin);
     char opcion;
-     do{
-        opcion = *linea;
-        switch (opcion)
-        {
-            case '1':
-                MostrarMenuGestionClientes();
-                opcion = 0;
+    char linea[10];
+    
+    do{
+        printf("===========================================\n");
+        printf("                MENU PRINCIPAL\n");
+        printf("===========================================\n\n");
+
+        printf("1. Gestion de clientes\n");
+        printf("2. Gestion de dispositivos\n");
+        printf("3. Ver registros del sistema\n");
+        printf("4. Salir\n");
+
+        printf("Seleccione una opcion > ");
+
+        fflush(stdout);
+        
+        fgets(linea, 10, stdin);
+        
+            opcion = *linea;
+            switch (opcion)
+            {
+                case '1':
+                    MostrarMenuGestionClientes();
+                    break;
+                case '2':
+                    MostrarMenuGestionDispositivos();
+                    opcion = 0;
+                    break; 
+                case '3':
+                    printf("a");
+                    break;  
+                case '4':
                 break;
-            case '2':
-                MostrarMenuGestionDispositivos();
-                opcion = 0;
-                break; 
-            case '3':
-                printf("a");
-                break; 
-            case '4':
-                printf("a");
-                break;  
-        }
-    }while (opcion != '5');
-    return 0;
+            }
+        }while (opcion != '4');
+        printf("Saliendo");
+        return 0;
 }
 
 void login() {

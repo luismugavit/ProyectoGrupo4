@@ -11,8 +11,10 @@
 
 int insertClienteBD(sqlite3 *db, cliente c);
 int insertDispositivoDB(sqlite3 *db, dispositivo disp, int id_cliente);
+int insertConfiguracionDB(sqlite3 *db, configuracion conf, int id_dispositivo);
 int contarFilas(sqlite3 *db, char *consulta, int bind_id);
 cliente* cargarBD(sqlite3 *db, int *totalClientes);
+int eliminarDispositivoDB(sqlite3 *db, int id_dispositivo);
 int eliminarClienteBD(sqlite3 *db, int idCliente);
 
 

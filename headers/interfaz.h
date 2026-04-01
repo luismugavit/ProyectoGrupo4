@@ -3,7 +3,9 @@
 
 void registrarOperacion(const char *usuario, const char *operacion);
 void crearCliente();
+void anadirConfiguracion();
 void infoCliente(cliente cl);
+void listarDispositivos();
 void ListarClientes();
 void eliminarClienteUI();
 void MostrarMenuGestionClientes();
