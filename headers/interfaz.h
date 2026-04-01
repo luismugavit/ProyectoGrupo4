@@ -9,9 +9,8 @@ void listarDispositivos();
 void ListarClientes();
 void eliminarClienteUI();
 void MostrarMenuGestionClientes();
-
+void mostrarRegistros();
 int MostrarMenuGestionDispositivos();
-
 int MostrarMenuPrincipal();
 void login();
 

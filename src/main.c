@@ -20,7 +20,7 @@ int main(){
 	numClientes = 0;
 
 	
-	int result = sqlite3_open("db/testserverconfs.sqlite", &db);
+	int result = sqlite3_open("db/serverconfs.sqlite", &db);
 	sqlite3_exec(db, "PRAGMA foreign_keys = ON;", NULL, NULL, NULL);
 	if (result != SQLITE_OK) {
 		printf("Error opening database\n");
@@ -35,14 +35,12 @@ int main(){
 
    // Interfaz en consola 
     login();
-	//MostrarMenuPrincipal(); 
+	
+	//TODO: LOS REGISTROS HAN DE REGISTRAR DETALLE SOBRE LAS OPERCIONES (QUE CLIENTE SE HA ANADIDO, QUE DISPOSITIVO SE HA BORRADO, ETC..)
+	//TODO(OPCIONAL): liberar memoria de todos los MALLOC. Cuando se cierre el programa.
+	//TODO(OPCIONAL): Cambiar datos de clientes, dispositivos, configuraciones.
 
-	//TODO: liberar memoria de todos los MALLOC. Cuando se cierre el programa.
-	//TODO: Borrar cliente, dispositivo, conf de la BD.
-	//TODO: Cambiar datos de clientes, dispositivos, configuraciones.
-	//TODO: Crear funciones que carguen/inserten un dispositivo/configuracion especifica para no cargar toda la BD siempre.
-
-
+//DATOS DE PRUEBA
 //    //CLIENTE 1
 //   	configuracion configs_r1[2];
 

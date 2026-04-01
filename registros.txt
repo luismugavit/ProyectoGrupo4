@@ -1,1 +1,5 @@
 admin, Crear cliente, 31/03/2026 20:20:26
+admin, Crear cliente, 01/04/2026 13:47:52
+admin, Log-in, 01/04/2026 16:26:29
+admin, Log-in, 01/04/2026 16:31:38
+admin, Crear cliente, 01/04/2026 16:31:52

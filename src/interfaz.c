@@ -15,9 +15,6 @@ extern sqlite3 *db;
 
 char usuario[10];
 
-
-
-
 void registrarOperacion(const char *usuario, const char *operacion) {
     
     FILE *archivoLog = fopen("registros.txt", "a");
@@ -80,7 +77,6 @@ void infoCliente(cliente c){
         }
     }
 }
-
 
 void ListarClientes() {
     printf("\n--- Lista de Clientes ---\n");
@@ -249,9 +245,9 @@ void anadirDispositivo() {
 
     dispositivo nuevo_disp = listaClientes[indiceCliente].listaDispositivos[totalDisp - 1];
     insertDispositivoDB(db, nuevo_disp, idSeleccionado);
+
+    registrarOperacion(usuario,"Dispositivo anadido");
 }
-
-
 
 void crearCliente(){
     cliente cNew;
@@ -362,6 +358,8 @@ void anadirConfiguracion() {
     printf("======================================================\n");
 
     insertConfiguracionDB(db, disp->configs[ultimo], idSeleccionado);
+
+    registrarOperacion(usuario,"Configuracion Anadida");
 }
 
 void eliminarClienteUI() {
@@ -406,6 +404,8 @@ void eliminarClienteUI() {
     if (!encontrado) {
         printf("No se ha encontrado ningun cliente con el ID %d.\n\n", id_eliminar);
     }
+
+    registrarOperacion(usuario,"Cliente eliminado");
 }
 
 void eliminarDispositivo() {
@@ -477,6 +477,8 @@ void eliminarDispositivo() {
     } else {
         printf("Operacion cancelada\n");
     }
+
+    registrarOperacion(usuario,"Dispositivo eliminado");
 }
 
 void MostrarMenuGestionClientes(){
@@ -529,8 +531,6 @@ void MostrarMenuGestionClientes(){
 
 }
 
-
-
 int MostrarMenuGestionDispositivos(){
     char opcion;
     char linea[10];
@@ -578,6 +578,34 @@ int MostrarMenuGestionDispositivos(){
     return 0;
 }
 
+void mostrarRegistros(){
+    FILE *archivo;
+    char linea[200];
+
+    archivo = fopen("registros.txt", "r");
+
+
+    printf("Usuario / Operacion / Fecha\n");
+    printf("--------------------------------------------------\n");
+
+    while (fgets(linea, sizeof(linea), archivo)) {
+        
+        linea[strcspn(linea, "\n")] = 0;
+
+        char *usuario = strtok(linea, ",");
+        char *operacion = strtok(NULL, ",");
+        char *fecha = strtok(NULL, ""); 
+
+        if (usuario != NULL && operacion != NULL && fecha != NULL) {
+            
+
+            printf("%s / %s / %s\n", usuario, operacion, fecha);
+        }
+    }
+
+    fclose(archivo);
+}
+
 int MostrarMenuPrincipal(){
     
     char opcion;
@@ -610,7 +638,7 @@ int MostrarMenuPrincipal(){
                     opcion = 0;
                     break; 
                 case '3':
-                    printf("a");
+                    mostrarRegistros();
                     break;  
                 case '4':
                 break;
@@ -679,7 +707,7 @@ void login() {
     }
 
    
-    
+    registrarOperacion(usuario,"Log-in");
     MostrarMenuPrincipal();
     
     
