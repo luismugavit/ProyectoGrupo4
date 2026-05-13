@@ -3,11 +3,14 @@
 #include <stdlib.h>
 #include "sqlite3.h"
 #include <string.h>
+#include <winsock2.h>
+#include "../headers/server.h"
 #include "../headers/db.h"
 #include "../headers/cliente.h"
 #include "../headers/configuracion.h"
 #include "../headers/dispositivo.h"
 #include "../headers/interfaz.h"
+
 
 cliente* listaClientes;
 int numClientes;
@@ -33,8 +36,11 @@ int main(){
 
 	printf("CLIENTES CARGADOS: %d\n", numClientes);
 
-   // Interfaz en consola 
-    login();
+   
+	//Iniciar servidor
+	establecerConexion();
+
+
 
     return 0;
 }
