@@ -17,7 +17,8 @@ char usuario[10];
 
 void registrarOperacion(const char *usuario, const char *operacion) {
     
-    FILE *archivoLog = fopen("registros.txt", "a");
+
+    FILE *archivoLog = fopen("src/logs/registrosLocales.txt", "a");
     
     if (archivoLog == NULL) {
         printf("Error: No se pudo escribir en el archivo de registros.\n");
@@ -583,7 +584,7 @@ void mostrarRegistros(){
     FILE *archivo;
     char linea[200];
 
-    archivo = fopen("registros.txt", "r");
+    archivo = fopen("src/logs/registrosLocales.txt", "r");
 
 
     printf("Usuario / Operacion / Fecha\n");
