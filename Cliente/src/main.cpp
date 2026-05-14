@@ -1,12 +1,49 @@
-// cliente.cpp
 #include <winsock2.h>
 #include <iostream>
 #include <string>
+#include "../headers/dispositivo.h"
+#include "../headers/configuracion.h"
 
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 6000
 
-int main() {
+Dispositivo* listaDispositivos;
+int numDispositivos;
+
+// Función para garantizar que se lee un solo mensaje a la vez
+int recibirMensaje(SOCKET sock, char* buffer, int max_len) {
+    int bytes_leidos = 0;
+    char c;
+    
+    // Leemos byte a byte hasta llenar el buffer o encontrar el terminador \0
+    while (bytes_leidos < max_len - 1) {
+        int result = recv(sock, &c, 1, 0);
+        
+        if (result > 0) {
+            buffer[bytes_leidos++] = c;
+            if (c == '\0') { 
+                break; // Llegamos al final del mensaje actual
+            }
+        } else {
+            return result; // Error de red o el servidor cerró la conexión
+        }
+    }
+    buffer[bytes_leidos] = '\0'; // Aseguramos que sea una cadena válida
+    return bytes_leidos;
+}
+
+const char* obtenerNombreArchivo(const char* ruta) {
+    
+    const char* ultimoSlash = strrchr(ruta, '/');
+
+    if (ultimoSlash != nullptr) {
+        return ultimoSlash + 1; // lo que viene después del '/'
+    }
+
+    return ruta; // por si no hay '/'
+}
+
+int conectarServidor(){
     WSADATA wsaData;
     SOCKET sock;
     struct sockaddr_in server;
@@ -43,65 +80,92 @@ int main() {
 
     std::cout << "Conectado al servidor!\n";
 
-    // Bucle de comunicación
-    while (true) {
-        std::string comando;
-        std::cout << "\nComando (SUMAR / RAIZ / IP / EXIT): ";
-        std::cin >> comando;
 
-        // Enviar comando
-        send(sock, comando.c_str(), comando.size() + 1, 0);
+    std::string usuario, password;
 
-        if (comando == "SUMAR") {
-            std::cout << "Introduce numeros (0 para terminar):\n";
+    std::cout << "Usuario: ";
+    std::cin >> usuario;
 
-            while (true) {
-                std::string num;
-                std::cin >> num;
+    std::cout << "Password: ";
+    std::cin >> password;
 
-                if (num == "0") {
-                    std::string end = "SUMAR-END";
-                    send(sock, end.c_str(), end.size() + 1, 0);
-                    break;
-                }
 
-                send(sock, num.c_str(), num.size() + 1, 0);
-            }
+    std::string login_msg = "LOGIN " + usuario + " " + password;
+    send(sock, login_msg.c_str(), login_msg.size() + 1, 0);
 
-            recv(sock, buffer, sizeof(buffer), 0);
-            std::cout << "Resultado: " << buffer << "\n";
-        }
 
-        else if (comando == "RAIZ") {
-            std::string num;
-            std::cout << "Numero: ";
-            std::cin >> num;
 
-            send(sock, num.c_str(), num.size() + 1, 0);
+    recibirMensaje(sock, buffer, sizeof(buffer));
 
-            std::string end = "RAIZ-END";
-            send(sock, end.c_str(), end.size() + 1, 0);
+    if (std::string(buffer) != "OK") {
+        std::cout << buffer;
+        std::cout << "Login incorrecto\n";
+        closesocket(sock);
+        WSACleanup();
+        return 0;
+    }
 
-            recv(sock, buffer, sizeof(buffer), 0);
-            std::cout << "Resultado: " << buffer << "\n";
-        }
+    std::cout << "Login correcto!\n";
 
-        else if (comando == "IP") {
-            std::string end = "IP-END";
-            send(sock, end.c_str(), end.size() + 1, 0);
 
-            recv(sock, buffer, sizeof(buffer), 0);
-            std::cout << "IP del servidor: " << buffer << "\n";
-        }
+    recibirMensaje(sock, buffer, sizeof(buffer));
+    sscanf(buffer, "NUM_DISPOSITIVOS %d", &numDispositivos);
 
-        else if (comando == "EXIT") {
-            break;
+
+    listaDispositivos = new Dispositivo[numDispositivos];
+
+
+    for (int i = 0; i < numDispositivos; i++) {
+        
+        recibirMensaje(sock, buffer, sizeof(buffer));
+        int id, num_configs;
+        char nombre[256];
+
+        std::cout << buffer << "\n";
+        sscanf(buffer, "DISPOSITIVO %d %s %d", &id, nombre, &num_configs);
+
+        // Crear dispositivo
+        listaDispositivos[i] = Dispositivo(id, nombre);
+        
+
+        listaDispositivos[i].num_configs = num_configs;
+
+        listaDispositivos[i].configs = new Configuracion[num_configs];
+
+        for (int j = 0; j < num_configs; j++) {
+
+            recibirMensaje(sock, buffer, sizeof(buffer));
+            int version;
+            char ruta[256];
+            char fecha[256];
+
+
+            sscanf(buffer, "CONFIG %d %s %s", &version, ruta, fecha);
+
+
+            const char* nombreArchivo = obtenerNombreArchivo(ruta);
+        
+ 
+            listaDispositivos[i].configs[j] = Configuracion(version, nombreArchivo, fecha);
         }
     }
 
+
+    recibirMensaje(sock, buffer, sizeof(buffer));
+    
     // Cerrar
     closesocket(sock);
     WSACleanup();
 
     return 0;
+
+}
+
+int main() {
+    conectarServidor();
+    for (int i = 0; i < numDispositivos; i++) {
+        std::cout << "Dispositivo " << i + 1 << ": "<< listaDispositivos[i].getNombre() << std::endl;
+        std::cout << "Dispositivo " << i + 1 << ": "<< listaDispositivos[i].getConfigs()[0].getRuta() << std::endl;
+    }
+
 }
