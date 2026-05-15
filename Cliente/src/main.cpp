@@ -204,5 +204,7 @@ int main() {
         std::cout << "Dispositivo " << i + 1 << ": "<< listaDispositivos[i].getNombre() << std::endl;
         std::cout << "Dispositivo " << i + 1 << ": "<< listaDispositivos[i].getConfigs()[0].getRuta() << std::endl;
     }
-    mostrarMenuPrincipal();
+
 }
+
+//Prueba
