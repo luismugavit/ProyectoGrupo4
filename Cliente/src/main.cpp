@@ -3,6 +3,7 @@
 #include <string>
 #include "../headers/dispositivo.h"
 #include "../headers/configuracion.h"
+#include "../headers/interfaz.h"
 
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 6000
@@ -167,5 +168,5 @@ int main() {
         std::cout << "Dispositivo " << i + 1 << ": "<< listaDispositivos[i].getNombre() << std::endl;
         std::cout << "Dispositivo " << i + 1 << ": "<< listaDispositivos[i].getConfigs()[0].getRuta() << std::endl;
     }
-
+    mostrarMenuPrincipal();
 }
