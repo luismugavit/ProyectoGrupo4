@@ -134,27 +134,63 @@ int conectarServidor(){
         listaDispositivos[i].configs = new Configuracion[num_configs];
 
         for (int j = 0; j < num_configs; j++) {
-
             recibirMensaje(sock, buffer, sizeof(buffer));
             int version;
-            char ruta[256];
-            char fecha[256];
+            char ruta[256]; 
+            char fecha[50]; 
 
-
+            
             sscanf(buffer, "CONFIG %d %s %s", &version, ruta, fecha);
-
-
             const char* nombreArchivo = obtenerNombreArchivo(ruta);
-        
- 
+                
+
             listaDispositivos[i].configs[j] = Configuracion(version, nombreArchivo, fecha);
+            //Descargar el archivo
+            recibirMensaje(sock, buffer, sizeof(buffer));
+            long fileSize = 0;
+            sscanf(buffer, "FILE_SIZE %ld", &fileSize);
+
+            if (fileSize > 0) {
+                char rutaDestino[512];
+                sprintf(rutaDestino, "confs/%s", nombreArchivo);
+
+                FILE* file = fopen(rutaDestino, "wb");
+                if (file) {
+                    long bytesRestantes = fileSize;
+                    char fileBuffer[1024]; 
+                    
+                    while (bytesRestantes > 0) {
+                        
+                        int bytesALeer = (bytesRestantes < sizeof(fileBuffer)) ? bytesRestantes : sizeof(fileBuffer);
+                        int bytesLeidos = recv(sock, fileBuffer, bytesALeer, 0);
+                        
+                        if (bytesLeidos > 0) {
+                            fwrite(fileBuffer, 1, bytesLeidos, file);
+                            bytesRestantes -= bytesLeidos;
+                        } else {
+                            std::cout << "Error en la descarga del archivo: " << nombreArchivo << "\n";
+                            break; 
+                        }
+                    }
+                    fclose(file);
+                    std::cout << "Descargado: " << rutaDestino << " (" << fileSize << " bytes)\n";
+                } else {
+                    std::cout << "Error: No se pudo crear " << rutaDestino << " (Comprueba que la carpeta existe)\n";
+                    char dumpBuffer[1024]; 
+                    long remaining = fileSize;
+                    while(remaining > 0){
+                        int readSize = (remaining < sizeof(dumpBuffer)) ? remaining : sizeof(dumpBuffer);
+                        remaining -= recv(sock, dumpBuffer, readSize, 0);
+                    }
+                }
+            } else {
+                std::cout << "El archivo " << nombreArchivo << " está vacío o no existe en el servidor.\n";
+            }
         }
     }
 
 
     recibirMensaje(sock, buffer, sizeof(buffer));
-    
-    // Cerrar
     closesocket(sock);
     WSACleanup();
 

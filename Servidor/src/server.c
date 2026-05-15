@@ -128,10 +128,30 @@ int establecerConexion(){
                         for (int j = 0; j < d.num_configs; j++) {
                             configuracion c = d.configs[j];
 
-                            sprintf(bufferEnvio, "CONFIG %d %s %s",
-                                    c.version, c.ruta, c.fecha);
-                            printf(bufferEnvio);
+                            sprintf(bufferEnvio, "CONFIG %d %s %s", c.version, c.ruta, c.fecha);
+                            printf("%s\n", bufferEnvio);
                             send(client_socket, bufferEnvio, strlen(bufferEnvio) + 1, 0);
+                            FILE* file = fopen(c.ruta, "rb");
+                            if (file) {
+                    
+                                fseek(file, 0, SEEK_END);
+                                long fileSize = ftell(file);
+                                rewind(file);
+                                sprintf(bufferEnvio, "FILE_SIZE %ld", fileSize);
+                                send(client_socket, bufferEnvio, strlen(bufferEnvio) + 1, 0);
+
+                          
+                                char fileBuffer[1024];
+                                size_t bytesRead;
+                                while ((bytesRead = fread(fileBuffer, 1, sizeof(fileBuffer), file)) > 0) {
+                                    send(client_socket, fileBuffer, bytesRead, 0);
+                                }
+                                fclose(file);
+                            } else {
+                                sprintf(bufferEnvio, "FILE_SIZE 0");
+                                send(client_socket, bufferEnvio, strlen(bufferEnvio) + 1, 0);
+                                printf("Advertencia: No se pudo abrir %s\n", c.ruta);
+                            }
                         }
                     }
 
