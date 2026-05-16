@@ -3,6 +3,8 @@
 
 void mostrarMenuPrincipal();
 void mostrarMenuGestionDispositivos();
+void ejecutarMenuGestionDispositivos();
+void ejecutarMenuPrincipal();
 void mostrarCabeceraAnyadirDispositivo();
 
 #endif

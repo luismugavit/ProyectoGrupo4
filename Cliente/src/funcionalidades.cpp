@@ -1,192 +1,148 @@
 #include "../headers/funcionalidades.h"
 #include "../headers/interfaz.h"
+#include "../headers/configuracion.h"
+#include "../headers/dispositivo.h"
 #include <iostream>
 #include <cstring>
+#include <fstream>
+#include <cstdlib>
+#include <ctime>
 
 extern Dispositivo* listaDispositivos;
 extern int numDispositivos;
-// --- Implementación de Cliente ---
-Cliente::Cliente() : id(0), listaDispositivos(nullptr), numDispositivos(0) {
-    nombre[0] = '\0';
-}
+extern std::string nombreCliente;
 
-Cliente::Cliente(int id, const char* nombre) : id(id), listaDispositivos(nullptr), numDispositivos(0) {
-    strncpy(this->nombre, nombre, 99);
-    this->nombre[99] = '\0';
-}
+void anadirDispositivo(){
 
-Cliente::Cliente(const Cliente& otro) : id(otro.id), numDispositivos(otro.numDispositivos) {
-    strcpy(nombre, otro.nombre);
-    if (numDispositivos > 0) {
-        listaDispositivos = new Dispositivo[numDispositivos];
-        for (int i = 0; i < numDispositivos; i++) {
-            listaDispositivos[i] = otro.listaDispositivos[i];
-        }
-    } else {
-        listaDispositivos = nullptr;
-    }
-}
+    char fechaActual[256];
+    time_t ahora = time(0);
+    struct tm tstruct;
+    tstruct = *localtime(&ahora);
+    strftime(fechaActual, sizeof(fechaActual), "%d/%m/%Y", &tstruct);
 
-Cliente& Cliente::operator=(const Cliente& otro) {
-    if (this != &otro) {
-        delete[] listaDispositivos;
-        id = otro.id;
-        strcpy(nombre, otro.nombre);
-        numDispositivos = otro.numDispositivos;
-        
-        if (numDispositivos > 0) {
-            listaDispositivos = new Dispositivo[numDispositivos];
-            for (int i = 0; i < numDispositivos; i++) {
-                listaDispositivos[i] = otro.listaDispositivos[i];
-            }
-        } else {
-            listaDispositivos = nullptr;
-        }
-    }
-    return *this;
-}
-
-Cliente::~Cliente() {
-    delete[] listaDispositivos;
-}
-
-int Cliente::getId() const { return id; }
-const char* Cliente::getNombre() const { return nombre; }
-int Cliente::getNumDispositivos() const { return numDispositivos; }
-
-void Cliente::agregarDispositivo(const Dispositivo& d) {
-    Dispositivo* nuevo = new Dispositivo[numDispositivos + 1];
+    std::cout << listaDispositivos[0].getNombre() << std::endl;
+    int nuevoId = 1;
     for (int i = 0; i < numDispositivos; i++) {
-        nuevo[i] = listaDispositivos[i];
+        if (listaDispositivos[i].id >= nuevoId) {
+            nuevoId = listaDispositivos[i].id + 1;
+        }
     }
-    nuevo[numDispositivos] = d;
+
+    Dispositivo* temporal = new Dispositivo[numDispositivos+1];
+
+    for(int i = 0; i < numDispositivos; i++){
+        temporal[i] = listaDispositivos[i];
+        listaDispositivos[i].configs = nullptr; //DESVINCULAR LISTA DE CONFIGS PARA QUE NO SE BORRE, REFORMAR COPIAS DE LA CLASE DISPOSITIVO
+    }
     
+    if (temporal == nullptr) {
+        std::cout << "Error: No hay memoria suficiente." << std::endl;
+        return;
+    }
+    
+
+    char nombre[100];
+    
+    std::cout << "Introduce el nombre del dispositivo: ";
+    std::cin.ignore(); 
+    std::cin.getline(nombre, 100);
+    
+    Dispositivo dispNuevo = Dispositivo(nuevoId,nombre);
+
+
+     
+    dispNuevo.num_configs = 1;
+    dispNuevo.configs = new Configuracion[1];
+    dispNuevo.configs[0].version = 1;
+    strcpy(dispNuevo.configs[0].fecha, fechaActual); 
+    sprintf(dispNuevo.configs[0].ruta, "confs/%s_%s_v%d.txt", nombreCliente.c_str(),dispNuevo.nombre, dispNuevo.configs[0].version);
+    std::ofstream archivo(dispNuevo.configs[0].ruta);
+    if (archivo.is_open()) {
+        srand(time(NULL) + nuevoId);
+        archivo << "--- ROUTER CONFIG FILE ---\n";
+        archivo << "Device: " << dispNuevo.nombre << "\n";
+        archivo << "Generated: " << fechaActual << "\n";
+        archivo << "IPv4: 10.0." << (rand() % 255) << "." << (rand() % 255) << "\n";
+        archivo << "Gateway: 10.0.0.1\n";
+        archivo << "DNS: 8.8.8.8\n";
+        archivo << "Interface: eth" << (rand() % 8) << "\n";
+        archivo.close();
+    }
+
+
+
     delete[] listaDispositivos;
-    listaDispositivos = nuevo;
+
+    temporal[numDispositivos] = dispNuevo;
+
+    dispNuevo.configs = nullptr; //DESVINCULAR LISTA DE CONFIGS PARA QUE NO SE BORRE, REFORMAR COPIAS DE LA CLASE DISPOSITIVO
+
+    listaDispositivos = temporal;
+
     numDispositivos++;
+    
+
+    std::cout << "Dispositivo añadido con exito (ID: " << nuevoId << ")" << std::endl;
+    
+    
+
+
+} 
+
+void listarDispositivos(){
+    for(int i = 0; i < numDispositivos; i++){
+        if(listaDispositivos[i].num_configs !=0){
+
+         std::cout <<listaDispositivos[i].id << "    " << listaDispositivos[i].nombre <<"       " << listaDispositivos[i].configs[listaDispositivos[i].num_configs-1].getVersion() <<std::endl;
+        }else{
+            std::cout <<listaDispositivos[i].id << "    " << listaDispositivos[i].nombre <<"       " <<"SIN VERSION" <<std::endl;
+        }
+
+
+    }
 }
 
-int Cliente::calcularNuevoIdDispositivo() const {
-    if (numDispositivos == 0) {
-        return 1;
-    }
-    int maxId = 0;
+void eliminarDispositivo(){
+
+    int id;
+    std::cout << "Introduce el ID del dispositivo a eliminar: ";
+    std::cin >> id;
+
+    int index = -1;
+
     for (int i = 0; i < numDispositivos; i++) {
-        if (listaDispositivos[i].getId() > maxId) {
-            maxId = listaDispositivos[i].getId();
+        if (listaDispositivos[i].id == id) {
+            index = i;
+            break;
         }
     }
-    return maxId + 1;
-}
 
-int Cliente::buscarDispositivoPorId(int id) const {
-    for (int i = 0; i < numDispositivos; i++) {
-        if (listaDispositivos[i].getId() == id) {
-            return i;
-        }
+    if (index == -1) {
+        std::cout << "Error: No se encontro ningun dispositivo con el ID " << id << ".\n";
+        return;
     }
-    return -1; // Retorna -1 si no lo encuentra
-}
-
-bool Cliente::removerDispositivo(int id) {
-    int index = buscarDispositivoPorId(id);
-    if (index == -1) return false;
-
-    // Si solo hay un dispositivo, liberamos la memoria y dejamos el array vacío
-    if (numDispositivos == 1) {
-        delete[] listaDispositivos;
-        listaDispositivos = nullptr;
-        numDispositivos = 0;
-        return true;
+    if (listaDispositivos[index].configs != nullptr) {
+        delete[] listaDispositivos[index].configs;
+        listaDispositivos[index].configs = nullptr; 
     }
 
-    // Si hay más de uno, creamos un nuevo array con un tamaño menor
-    Dispositivo* nuevo = new Dispositivo[numDispositivos - 1];
-    for (int i = 0, j = 0; i < numDispositivos; i++) {
-        if (i != index) {
-            nuevo[j++] = listaDispositivos[i];
-        }
+    Dispositivo* nuevaLista = new Dispositivo[numDispositivos - 1];
+
+    for (int i = 0; i < index; i++) {
+        nuevaLista[i] = listaDispositivos[i];
+        listaDispositivos[i].configs = nullptr; //DESVINCULAR LISTA DE CONFIGS PARA QUE NO SE BORRE, REFORMAR COPIAS DE LA CLASE DISPOSITIVO
+    }
+
+    for (int i = index + 1; i < numDispositivos; i++) {
+        nuevaLista[i - 1] = listaDispositivos[i];
+        listaDispositivos[i].configs = nullptr; //DESVINCULAR LISTA DE CONFIGS PARA QUE NO SE BORRE, REFORMAR COPIAS DE LA CLASE DISPOSITIVO
+
     }
     
     delete[] listaDispositivos;
-    listaDispositivos = nuevo;
+    listaDispositivos = nuevaLista;
+
     numDispositivos--;
-    return true;
-}
+    std::cout << "Dispositivo con ID " << id << " eliminado correctamente.\n";
 
-// --- Funcionalidad 1: Añadir Dispositivo ---
-void anyadirDispositivo(Cliente& cliente) {
-    mostrarCabeceraAnyadirDispositivo();
-
-    int nuevoId = cliente.calcularNuevoIdDispositivo();
-    char nombreDisp[100];
-
-    std::cout << "Introduzca el nombre del nuevo dispositivo: ";
-    std::cin >> std::ws;
-    std::cin.getline(nombreDisp, 100);
-
-    Dispositivo nuevoDisp(nuevoId, cliente.getId(), nombreDisp);
-    cliente.agregarDispositivo(nuevoDisp);
-
-    std::cout << "\nExito: Dispositivo '" << nombreDisp << "' (ID: " << nuevoId 
-              << ") anadido correctamente al cliente '" << cliente.getNombre() << "'.\n";
-}
-
-// --- Funcionalidad 2: Listar Dispositivos ---
-void listarDispositivos(const Cliente& cliente) {
-    std::cout << "\n===========================================\n";
-    std::cout << "           LISTAR DISPOSITIVOS\n";
-    std::cout << "===========================================\n\n";
-
-    if (cliente.getNumDispositivos() == 0) {
-        std::cout << "No hay dispositivos registrados.\n";
-        return;
-    }
-
-    std::cout << "ID | Nombre | Version Actual\n";
-    for (int i = 0; i < cliente.getNumDispositivos(); i++) {
-        const Dispositivo& d = cliente.listaDispositivos[i];
-        std::cout << d.getId() << " | " << d.getNombre() << " | ";
-        
-        if (d.getNumConfigs() == 0) {
-            std::cout << "Sin config\n";
-        } else {
-            // Obtenemos la última configuración para mostrar la versión actual
-            int ultimaVersion = d.getConfigs()[d.getNumConfigs() - 1].getVersion();
-            std::cout << "v" << ultimaVersion << "\n";
-        }
-    }
-}
-
-// --- Funcionalidad 3: Eliminar Dispositivo ---
-void eliminarDispositivo(Cliente& cliente) {
-    std::cout << "\n===========================================\n";
-    std::cout << "          ELIMINAR DISPOSITIVO\n";
-    std::cout << "===========================================\n\n";
-
-    if (cliente.getNumDispositivos() == 0) {
-        std::cout << "No hay dispositivos registrados para eliminar.\n";
-        return;
-    }
-
-    int idEliminar;
-    std::cout << "Introduzca el ID del dispositivo a eliminar: ";
-    std::cin >> idEliminar;
-
-    int index = cliente.buscarDispositivoPorId(idEliminar);
-    if (index == -1) {
-        std::cout << "Error: No se encontro ningun dispositivo con ID " << idEliminar << ".\n";
-        return;
-    }
-
-    std::cout << "Si continua el dispositivo se eliminara [s/n]: ";
-    char confirmacion;
-    std::cin >> confirmacion;
-
-    if (confirmacion == 's' || confirmacion == 'S') {
-        cliente.removerDispositivo(idEliminar);
-        std::cout << "Dispositivo con ID " << idEliminar << " eliminado correctamente.\n";
-    } else {
-        std::cout << "Operacion cancelada.\n";
-    }
 }

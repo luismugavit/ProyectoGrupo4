@@ -1,11 +1,18 @@
 #include "../headers/interfaz.h"
+#include "../headers/funcionalidades.h"
 #include <iostream>
+
+
+
 
 void mostrarMenuPrincipal() {
     std::cout << "===========================================\n";
     std::cout << "              MENU PRINCIPAL\n";
     std::cout << "===========================================\n";
-    // Resto del menú principal AQUÍ
+    std::cout << "1. Gestionar Dipositivos\n";
+    std::cout << "2. Guardar cambios en servidor\n";
+    std::cout << "3. Salir\n";
+    std::cout << "Seleccione una opcion > ";
 }
 
 void mostrarMenuGestionDispositivos() {
@@ -18,6 +25,86 @@ void mostrarMenuGestionDispositivos() {
     std::cout << "4. Volver\n";
     std::cout << "5. Salir\n";
     std::cout << "Seleccione una opcion > ";
+
+}
+void ejecutarMenuPrincipal(){
+    int opcion;
+    bool volver = false;
+    do {
+        mostrarMenuPrincipal();
+        std::cin >> opcion;
+
+        switch (opcion) {
+            case 1:
+                ejecutarMenuGestionDispositivos();
+                break;
+
+            case 2:
+                // CODIGO PARA GUARDAR CAMBIOS EN SERVIDOR
+                
+                break;
+
+            case 3:
+                std::cout << "Saliendo del programa...\n";
+                exit(0); 
+                break;
+
+            default:
+                std::cout << "Opcion no valida. Intentalo de nuevo.\n";
+                break;
+        }
+
+        std::cout << "\n"; 
+
+    } while (!volver);
+}
+
+void ejecutarMenuGestionDispositivos() {
+    int opcion;
+    bool volver = false;
+
+    do {
+        mostrarMenuGestionDispositivos();
+        std::cin >> opcion;
+
+        switch (opcion) {
+            case 1:
+                anadirDispositivo(); 
+                break;
+
+            case 2:
+            
+                std::cout << "===========================================\n";
+                std::cout << "           LISTA DISPOSITIVOS\n";
+                std::cout << "===========================================\n\n";
+
+                std::cout << "ID    NOMBRE  VERSION\n";
+                listarDispositivos();
+                break;
+
+            case 3:
+                
+                eliminarDispositivo();
+                break;
+
+            case 4:
+                std::cout << "Volviendo al menu principal...\n";
+                volver = true;
+                break;
+
+            case 5:
+                std::cout << "Saliendo del programa...\n";
+                exit(0);
+                break;
+
+            default:
+                std::cout << "Opcion no valida. Intentalo de nuevo.\n";
+                break;
+        }
+
+        std::cout << "\n"; 
+
+    } while (!volver);
 }
 
 void mostrarCabeceraAnyadirDispositivo() {
