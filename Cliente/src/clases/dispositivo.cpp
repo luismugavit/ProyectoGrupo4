@@ -2,17 +2,17 @@
 #include <cstring>
 #include <iostream>
 
-Dispositivo::Dispositivo() : id(0), configs(nullptr), num_configs(0) {
+Dispositivo::Dispositivo() : id(0), idCliente(0), configs(nullptr), num_configs(0) {
     nombre[0] = '\0';
 }
 
-Dispositivo::Dispositivo(int id, const char* nombre) 
-    : id(id), configs(nullptr), num_configs(0) {
+Dispositivo::Dispositivo(int id, int idCliente, const char* nombre) 
+    : id(id), idCliente(idCliente), configs(nullptr), num_configs(0) {
     setNombre(nombre);
 }
 
 Dispositivo::Dispositivo(const Dispositivo& otro) 
-    : id(otro.id), num_configs(otro.num_configs) {
+    : id(otro.id), idCliente(otro.idCliente), num_configs(otro.num_configs) {
     strcpy(nombre, otro.nombre);
     
     if (num_configs > 0) {
@@ -30,6 +30,7 @@ Dispositivo& Dispositivo::operator=(const Dispositivo& otro) {
         delete[] configs;
         
         id = otro.id;
+        idCliente = otro.idCliente;
         strcpy(nombre, otro.nombre);
         num_configs = otro.num_configs;
         
@@ -53,6 +54,10 @@ int Dispositivo::getId() const {
     return id;
 }
 
+int Dispositivo::getIdCliente() const { 
+    return idCliente; 
+}
+
 const char* Dispositivo::getNombre() const {
     return nombre;
 }
@@ -67,6 +72,10 @@ int Dispositivo::getNumConfigs() const {
 
 void Dispositivo::setId(int id) {
     this->id = id;
+}
+
+void Dispositivo::setIdCliente(int idCliente) { 
+    this->idCliente = idCliente; 
 }
 
 void Dispositivo::setNombre(const char* nombre) {
