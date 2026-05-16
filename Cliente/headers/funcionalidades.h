@@ -23,9 +23,15 @@ public:
     
     void agregarDispositivo(const Dispositivo& d);
     int calcularNuevoIdDispositivo() const;
+
+    // Métodos para la gestión de eliminación
+    int buscarDispositivoPorId(int id) const;
+    bool removerDispositivo(int id);
 };
 
 // Funcionalidades del cliente
 void anyadirDispositivo(Cliente& cliente);
+void listarDispositivos(const Cliente& cliente);
+void eliminarDispositivo(Cliente& cliente);
 
 #endif
