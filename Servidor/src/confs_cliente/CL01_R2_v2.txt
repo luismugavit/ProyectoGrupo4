@@ -1,0 +1,15 @@
+! Configuración de Switch CL01 - Versión 2
+hostname Switch-Hospital-01
+!
+vlan 100
+ name Planta1
+!
+interface FastEthernet0/1
+ switchport mode access
+ switchport access vlan 100
+!
+line vty 0 4
+ password deusto_seguro
+ login
+!
+end

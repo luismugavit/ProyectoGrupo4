@@ -1,0 +1,11 @@
+! Configuración de Switch CL00 - Versión 1
+hostname Switch-LAN-00
+!
+vlan 10
+ name Administracion
+!
+interface FastEthernet0/1
+ switchport mode access
+ switchport access vlan 10
+!
+end

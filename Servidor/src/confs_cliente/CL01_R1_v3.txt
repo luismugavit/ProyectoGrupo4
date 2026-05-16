@@ -1,0 +1,17 @@
+! Configuración de Router Principal CL01 - Versión 3
+hostname Router-Hospital-01
+!
+interface GigabitEthernet0/0
+ ip address 212.170.33.2 255.255.255.248
+ no shutdown
+!
+interface GigabitEthernet0/1
+ ip address 10.0.0.1 255.0.0.0
+ no shutdown
+!
+ip route 0.0.0.0 0.0.0.0 212.170.33.1
+!
+access-list 100 deny tcp any any eq 23
+access-list 100 permit ip any any
+!
+end
