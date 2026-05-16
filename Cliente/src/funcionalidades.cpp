@@ -3,6 +3,8 @@
 #include <iostream>
 #include <cstring>
 
+extern Dispositivo* listaDispositivos;
+extern int numDispositivos;
 // --- Implementación de Cliente ---
 Cliente::Cliente() : id(0), listaDispositivos(nullptr), numDispositivos(0) {
     nombre[0] = '\0';

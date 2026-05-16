@@ -14,6 +14,7 @@ public:
     int num_configs;
 
     Dispositivo();
+    Dispositivo(int id, const char* nombre);
     Dispositivo(int id, int idCliente, const char* nombre); // Actualizado con idCliente
     Dispositivo(const Dispositivo& otro);
     Dispositivo& operator=(const Dispositivo& otro);

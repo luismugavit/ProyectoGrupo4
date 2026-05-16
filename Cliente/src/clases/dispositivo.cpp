@@ -11,6 +11,12 @@ Dispositivo::Dispositivo(int id, int idCliente, const char* nombre)
     setNombre(nombre);
 }
 
+ Dispositivo::Dispositivo(int id, const char* nombre){
+    this-> id = id;
+    strcpy(this->nombre,nombre);
+
+ }
+
 Dispositivo::Dispositivo(const Dispositivo& otro) 
     : id(otro.id), idCliente(otro.idCliente), num_configs(otro.num_configs) {
     strcpy(nombre, otro.nombre);
