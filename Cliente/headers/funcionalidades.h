@@ -10,5 +10,6 @@
 void anadirDispositivo();
 void listarDispositivos();
 void eliminarDispositivo();
+void anadirConfiguracion();
 
 #endif

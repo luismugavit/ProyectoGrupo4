@@ -14,8 +14,6 @@ int numDispositivos;
 std::string nombreCliente = "Luis";
 
 
-
-
 int main() {
     
     conectarServidorB();

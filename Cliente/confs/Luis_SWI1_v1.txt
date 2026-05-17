@@ -1,0 +1,7 @@
+--- ROUTER CONFIG FILE ---
+Device: SWI1
+Generated: 17/05/2026
+IPv4: 10.0.132.231
+Gateway: 10.0.0.1
+DNS: 8.8.8.8
+Interface: eth4
