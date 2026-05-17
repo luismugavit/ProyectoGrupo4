@@ -56,8 +56,11 @@ void anadirDispositivo(){
     dispNuevo.configs = new Configuracion[1];
     dispNuevo.configs[0].version = 1;
     strcpy(dispNuevo.configs[0].fecha, fechaActual); 
-    sprintf(dispNuevo.configs[0].ruta, "confs/%s_%s_v%d.txt", nombreCliente.c_str(),dispNuevo.nombre, dispNuevo.configs[0].version);
-    std::ofstream archivo(dispNuevo.configs[0].ruta);
+    sprintf(dispNuevo.configs[0].ruta, "%s_%s_v%d.txt", nombreCliente.c_str(),dispNuevo.nombre, dispNuevo.configs[0].version);
+    char rutaNu[256];
+    sprintf(rutaNu, "confs/%s",dispNuevo.configs[0].ruta);
+    //std::cout << rutaNu << std::endl;
+    std::ofstream archivo(rutaNu);
     if (archivo.is_open()) {
         srand(time(NULL) + nuevoId);
         archivo << "--- ROUTER CONFIG FILE ---\n";
@@ -68,6 +71,9 @@ void anadirDispositivo(){
         archivo << "DNS: 8.8.8.8\n";
         archivo << "Interface: eth" << (rand() % 8) << "\n";
         archivo.close();
+    }else{
+            std::cout << "NO ENCONTRAO" << std::endl;
+
     }
 
 
@@ -127,7 +133,9 @@ void eliminarDispositivo(){
     if (listaDispositivos[index].configs != nullptr) {
         for (int j = 0; j < listaDispositivos[index].num_configs; j++) {
             // Intentamos borrar el archivo del disco usando la ruta guardada
-            if (remove(listaDispositivos[index].configs[j].ruta) == 0) {
+            char rutaNu[256];
+            sprintf(rutaNu, "confs/%s",listaDispositivos[index].configs[j].ruta);
+            if (remove(rutaNu) == 0) {
                 std::cout << "Archivo eliminado: " << listaDispositivos[index].configs[j].ruta << "\n";
             } else {
                 // Si el archivo no existe o está bloqueado, no detenemos el programa
@@ -197,7 +205,7 @@ void anadirConfiguracion(){
     struct tm tstruct = *localtime(&ahora);
     strftime(nuevaConf.fecha, sizeof(nuevaConf.fecha), "%d/%m/%Y", &tstruct);
 
-    sprintf(nuevaConf.ruta, "confs/%s_%s_v%d.txt", 
+    sprintf(nuevaConf.ruta, "%s_%s_v%d.txt", 
             nombreCliente.c_str(), 
             listaDispositivos[index].nombre, nuevaConf.version);
     
@@ -215,7 +223,9 @@ void anadirConfiguracion(){
     
     listaDispositivos[index].configs = tempConfigs;
     listaDispositivos[index].num_configs++;
-    std::ofstream archivo(nuevaConf.ruta);
+    char rutaNu[256];
+    sprintf(rutaNu, "confs/%s",nuevaConf.ruta);
+    std::ofstream archivo(rutaNu);
     if (archivo.is_open()) {
         archivo << "--- CONFIGURACION VERSION " << nuevaConf.version << " ---\n";
         archivo << "Fecha: " << nuevaConf.fecha << "\n";

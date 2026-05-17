@@ -12,6 +12,7 @@
 extern Dispositivo* listaDispositivos;
 extern int numDispositivos;
 extern std::string nombreCliente;
+SOCKET sock;
 
 
 // Función para garantizar que se lee un solo mensaje a la vez
@@ -49,7 +50,7 @@ const char* obtenerNombreArchivoB(const char* ruta) {
 
 int conectarServidorB(){
     WSADATA wsaData;
-    SOCKET sock;
+    
     struct sockaddr_in server;
     char buffer[512];
 
@@ -129,7 +130,7 @@ int conectarServidorB(){
         sscanf(buffer, "DISPOSITIVO %d %s %d", &id, nombre, &num_configs);
 
         // Crear dispositivo
-        std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaa\n";
+        
         //ARREGLAR
         Dispositivo dispTemporal(id, nombre);
         dispTemporal.configs = nullptr;
@@ -201,10 +202,96 @@ int conectarServidorB(){
 
 
     recibirMensajeB(sock, buffer, sizeof(buffer));
-    closesocket(sock);
-    WSACleanup();
+    // closesocket(sock);
+    // WSACleanup();
     
 
     return 0;
 
+}
+
+int subirCambios(SOCKET sock) {
+    char buffer[512]; // [Longitud: 512 caracteres para mensajes de control]
+    
+    // 1. Iniciar subida de cambios (sin credenciales, la sesión ya lo sabe)
+    char UPLOAD_MSG[20]; // [Longitud: 20 caracteres para el comando UPLOAD_CHANGES]
+    strcpy(UPLOAD_MSG, "UPLOAD_CHANGES");
+    send(sock, UPLOAD_MSG, strlen(UPLOAD_MSG) + 1, 0);
+
+    // Esperar confirmación del servidor
+    recibirMensajeB(sock, buffer, sizeof(buffer)); // Usando tu función habitual de recepción
+    if (strcmp(buffer, "OK") != 0) {
+        std::cout << "Error: El servidor no acepto la subida de cambios. Pudo perderse la sesion.\n";
+        return 0; 
+    }
+
+    // 2. Enviar cantidad de dispositivos
+    sprintf(buffer, "NUM_DISPOSITIVOS %d", numDispositivos);
+    send(sock, buffer, strlen(buffer) + 1, 0);
+
+    // 3. Iterar y enviar todos los datos y archivos
+    for (int i = 0; i < numDispositivos; i++) {
+        Dispositivo d = listaDispositivos[i];
+        sprintf(buffer, "DISPOSITIVO %d %s %d", d.id, d.nombre, d.num_configs);
+        std::cout << buffer << "\n";
+        send(sock, buffer, strlen(buffer) + 1, 0);
+
+        for (int j = 0; j < d.num_configs; j++) {
+            Configuracion c = d.configs[j];
+            sprintf(buffer, "CONFIG %d %s %s", c.version, c.ruta, c.fecha);
+            send(sock, buffer, strlen(buffer) + 1, 0);
+
+            // Preparar la subida del archivo de texto
+            char rutaLocal[256]; // [Longitud: 256 caracteres para ubicar el archivo local]
+            sprintf(rutaLocal, "confs/%s", c.ruta);
+            
+            FILE* f = fopen(rutaLocal, "rb");
+            if (f) {
+                // Obtener tamaño del archivo
+                fseek(f, 0, SEEK_END);
+                long fileSize = ftell(f);
+                rewind(f);
+
+                // Informar al servidor del tamaño
+                sprintf(buffer, "FILE_SIZE %ld", fileSize);
+                send(sock, buffer, strlen(buffer) + 1, 0);
+
+                // Subir el contenido en bloques binarios
+                char fileBuffer[1024]; // [Longitud: 1024 caracteres para bloque de subida binaria]
+                int bytesRead;
+                while ((bytesRead = fread(fileBuffer, 1, sizeof(fileBuffer), f)) > 0) {
+                    send(sock, fileBuffer, bytesRead, 0);
+                }
+                fclose(f);
+            } else {
+                // Si el archivo no existe o no se puede leer, enviamos tamaño 0
+                sprintf(buffer, "FILE_SIZE 0");
+                send(sock, buffer, strlen(buffer) + 1, 0);
+                std::cout << "Advertencia: No se encontro el archivo local " << rutaLocal << "\n";
+            }
+        }
+    }
+
+    // 4. Finalizar el bloque de subida
+    char endMsg[4]; // [Longitud: 4 caracteres para enviar END]
+    strcpy(endMsg, "END");
+    send(sock, endMsg, strlen(endMsg) + 1, 0);
+
+    std::cout << "Subida de cambios completada con exito.\n";
+    return 1;
+}
+
+void acabarConexion(SOCKET sock) {
+    // 1. Cerrar el socket si está activo
+    if (sock != INVALID_SOCKET) {
+        closesocket(sock);
+    }
+
+    // 2. Liberar los recursos de Winsock
+    WSACleanup();
+
+    std::cout << "Conexion cerrada correctamente. Terminando el programa...\n";
+
+    // 3. Terminar la ejecución del programa con código de éxito (0)
+    exit(0);
 }

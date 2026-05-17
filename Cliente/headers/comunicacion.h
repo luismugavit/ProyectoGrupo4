@@ -6,6 +6,8 @@
 int recibirMensajeB(SOCKET sock, char* buffer, int max_len);
 const char* obtenerNombreArchivoB(const char* ruta);
 int conectarServidorB();
+int subirCambios(SOCKET sock);
+void acabarConexion(SOCKET sock);
 
 
 #endif
