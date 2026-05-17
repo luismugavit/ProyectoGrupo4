@@ -13,5 +13,6 @@ void registrarLog(const std::string& accion);
 void anadirDispositivo();
 void listarDispositivos();
 void eliminarDispositivo();
+void anadirConfiguracion();
 
 #endif
