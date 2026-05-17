@@ -140,8 +140,13 @@ int conectarServidorB(){
         sscanf(buffer, "DISPOSITIVO %d %s %d", &id, nombre, &num_configs);
 
         // Crear dispositivo
-        listaDispositivos[i] = Dispositivo(id, nombre);
         std::cout << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAaa\n";
+        //ARREGLAR
+        Dispositivo dispTemporal(id, nombre);
+        dispTemporal.configs = nullptr;
+        dispTemporal.num_configs = 0;
+        listaDispositivos[i] = dispTemporal;
+        dispTemporal.configs = nullptr;
         
 
         listaDispositivos[i].num_configs = num_configs;
