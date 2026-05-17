@@ -157,6 +157,73 @@ int establecerConexion(){
 
                     strcpy(bufferEnvio, "END");
                     send(client_socket, bufferEnvio, strlen(bufferEnvio) + 1, 0);
+
+                    // --- EL SERVIDOR AHORA ESPERA A VER SI EL CLIENTE QUIERE SUBIR ALGO ---
+        memset(recvBuff, 0, sizeof(recvBuff));
+        int leidos = recv(client_socket, recvBuff, sizeof(recvBuff), 0);
+        
+        if (leidos > 0 && strcmp(recvBuff, "UPLOAD_START") == 0) {
+            
+            while (1) {
+                memset(recvBuff, 0, sizeof(recvBuff));
+                recv(client_socket, recvBuff, sizeof(recvBuff), 0);
+                
+                if (strcmp(recvBuff, "UPLOAD_END") == 0) {
+                    strcpy(bufferEnvio, "UPLOAD_OK");
+                    send(client_socket, bufferEnvio, strlen(bufferEnvio) + 1, 0);
+                    break; // Terminamos de recibir cosas
+                }
+                
+                if (strncmp(recvBuff, "DISPOSITIVO", 11) == 0) {
+                    int dispId, numConfigs;
+                    char dispNombre[100];
+                    sscanf(recvBuff, "DISPOSITIVO %d %s %d", &dispId, dispNombre, &numConfigs);
+                    
+                    // AQUI FALTA GUARDAR EL DISPOSITIVO EN LA BASE DE DATOS
+                    // ...
+
+                    for (int i = 0; i < numConfigs; i++) {
+                        memset(recvBuff, 0, sizeof(recvBuff));
+                        recv(client_socket, recvBuff, sizeof(recvBuff), 0);
+                        
+                        int confVersion;
+                        char confRuta[256], confFecha[50];
+                        sscanf(recvBuff, "CONFIG %d %s %s", &confVersion, confRuta, confFecha);
+                        
+                        char* nombreFichero = strrchr(confRuta, '/');
+                        nombreFichero = (nombreFichero != NULL) ? nombreFichero + 1 : confRuta;
+                        
+                        memset(recvBuff, 0, sizeof(recvBuff));
+                        recv(client_socket, recvBuff, sizeof(recvBuff), 0);
+                        long fileSize = 0;
+                        sscanf(recvBuff, "FILE_SIZE %ld", &fileSize);
+                        
+                        if (fileSize > 0) {
+                            char rutaDestino[512];
+                            sprintf(rutaDestino, "src/confs_cliente/%s", nombreFichero);
+                            
+                            FILE* file_upload = fopen(rutaDestino, "wb");
+                            long restantes = fileSize;
+                            char fileBufferData[1024];
+                            
+                            while (restantes > 0) {
+                                int aLeer = (restantes < sizeof(fileBufferData)) ? restantes : sizeof(fileBufferData);
+                                int bytesRecibidos = recv(client_socket, fileBufferData, aLeer, 0);
+                                if (bytesRecibidos > 0 && file_upload != NULL) {
+                                    fwrite(fileBufferData, 1, bytesRecibidos, file_upload);
+                                    restantes -= bytesRecibidos;
+                                } else break;
+                            }
+                            if (file_upload != NULL) fclose(file_upload);
+                            
+                            // AQUI FALTA GUARDAR LA CONFIGURACIÓN EN LA BASE DE DATOS
+                            // ...
+                        }
+                    }
+                }
+            }
+        }
+        // --- FIN DE LA SUBIDA DE DATOS ---
                 }
                 
 
@@ -172,7 +239,8 @@ int establecerConexion(){
         }
 
         
-
+        
+        
         closesocket(client_socket);
     }
 

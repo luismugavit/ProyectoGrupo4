@@ -13,7 +13,11 @@ Dispositivo* listaDispositivos;
 int numDispositivos;
 std::string nombreCliente = "Luis";
 
-
+// Variables para subir cambios
+Dispositivo* dispositivosNuevos = nullptr;
+int numDispositivosNuevos = 0;
+std::string loginUser = "";
+std::string loginPass = "";
 
 
 int main() {

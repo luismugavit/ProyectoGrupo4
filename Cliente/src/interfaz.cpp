@@ -1,5 +1,6 @@
 #include "../headers/interfaz.h"
 #include "../headers/funcionalidades.h"
+#include "../headers/comunicacion.h"
 #include <iostream>
 
 
@@ -22,11 +23,13 @@ void mostrarMenuGestionDispositivos() {
     std::cout << "1. Anyadir dispositivos\n";
     std::cout << "2. Listar Dispositivos\n";
     std::cout << "3. Eliminar Dispositivos\n";
-    std::cout << "4. Volver\n";
-    std::cout << "5. Salir\n";
+    std::cout << "4. Anyadir Configuracion\n";
+    std::cout << "5. Volver\n";
+    std::cout << "6. Salir\n";
     std::cout << "Seleccione una opcion > ";
 
 }
+
 void ejecutarMenuPrincipal(){
     int opcion;
     bool volver = false;
@@ -41,7 +44,7 @@ void ejecutarMenuPrincipal(){
 
             case 2:
                 // CODIGO PARA GUARDAR CAMBIOS EN SERVIDOR
-                
+                subirAlServidor();
                 break;
 
             case 3:
@@ -88,11 +91,15 @@ void ejecutarMenuGestionDispositivos() {
                 break;
 
             case 4:
-                std::cout << "Volviendo al menu principal...\n";
-                volver = true;
+                anadirConfiguracion();
                 break;
 
             case 5:
+                std::cout << "Volviendo al menu principal...\n";
+                volver = true;
+                break;
+            
+            case 6:
                 std::cout << "Saliendo del programa...\n";
                 exit(0);
                 break;

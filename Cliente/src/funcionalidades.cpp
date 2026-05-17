@@ -11,6 +11,41 @@
 extern Dispositivo* listaDispositivos;
 extern int numDispositivos;
 extern std::string nombreCliente;
+extern Dispositivo* dispositivosNuevos;
+extern int numDispositivosNuevos;
+
+// Sistema de Logs
+void registrarLog(const std::string& accion) {
+    std::ofstream file("logs/clienteLogs.txt", std::ios::app);
+    if (file.is_open()) {
+        char fechaActual[256];
+        time_t ahora = time(0);
+        struct tm tstruct = *localtime(&ahora);
+        strftime(fechaActual, sizeof(fechaActual), "%d/%m/%Y %H:%M:%S", &tstruct);
+        file << fechaActual << " | " << nombreCliente << " | " << accion << "\n";
+        file.close();
+    }
+}
+
+// Función auxiliar para registrar cambios en la sesión actual
+void actualizarDispositivosNuevos(int id, const char* nombre, const Configuracion* configOpcional) {
+    for (int i = 0; i < numDispositivosNuevos; i++) {
+        if (dispositivosNuevos[i].id == id) {
+            if (configOpcional != nullptr) dispositivosNuevos[i].agregarConfiguracion(*configOpcional);
+            return;
+        }
+    }
+    // Si no está, lo añadimos
+    Dispositivo d(id, nombre);
+    if (configOpcional != nullptr) d.agregarConfiguracion(*configOpcional);
+    
+    Dispositivo* temp = new Dispositivo[numDispositivosNuevos + 1];
+    for (int i = 0; i < numDispositivosNuevos; i++) temp[i] = dispositivosNuevos[i];
+    temp[numDispositivosNuevos] = d;
+    delete[] dispositivosNuevos;
+    dispositivosNuevos = temp;
+    numDispositivosNuevos++;
+}
 
 void anadirDispositivo(){
 
@@ -20,7 +55,6 @@ void anadirDispositivo(){
     tstruct = *localtime(&ahora);
     strftime(fechaActual, sizeof(fechaActual), "%d/%m/%Y", &tstruct);
 
-    std::cout << listaDispositivos[0].getNombre() << std::endl;
     int nuevoId = 1;
     for (int i = 0; i < numDispositivos; i++) {
         if (listaDispositivos[i].id >= nuevoId) {
@@ -28,35 +62,18 @@ void anadirDispositivo(){
         }
     }
 
-    Dispositivo* temporal = new Dispositivo[numDispositivos+1];
-
-    for(int i = 0; i < numDispositivos; i++){
-        temporal[i] = listaDispositivos[i];
-        listaDispositivos[i].configs = nullptr; //DESVINCULAR LISTA DE CONFIGS PARA QUE NO SE BORRE, REFORMAR COPIAS DE LA CLASE DISPOSITIVO
-    }
-    
-    if (temporal == nullptr) {
-        std::cout << "Error: No hay memoria suficiente." << std::endl;
-        return;
-    }
-    
-
     char nombre[100];
     
     std::cout << "Introduce el nombre del dispositivo: ";
     std::cin.ignore(); 
     std::cin.getline(nombre, 100);
     
-    Dispositivo dispNuevo = Dispositivo(nuevoId,nombre);
+    Dispositivo dispNuevo = Dispositivo(nuevoId, nombre);
 
-
-     
-    dispNuevo.num_configs = 1;
-    dispNuevo.configs = new Configuracion[1];
-    dispNuevo.configs[0].version = 1;
-    strcpy(dispNuevo.configs[0].fecha, fechaActual); 
-    sprintf(dispNuevo.configs[0].ruta, "confs/%s_%s_v%d.txt", nombreCliente.c_str(),dispNuevo.nombre, dispNuevo.configs[0].version);
-    std::ofstream archivo(dispNuevo.configs[0].ruta);
+    Configuracion confNuevo(1, "", fechaActual);
+    sprintf(confNuevo.ruta, "confs/%s_%s_v%d.txt", nombreCliente.c_str(), dispNuevo.nombre, 1);
+    
+    std::ofstream archivo(confNuevo.ruta);
     if (archivo.is_open()) {
         srand(time(NULL) + nuevoId);
         archivo << "--- ROUTER CONFIG FILE ---\n";
@@ -68,25 +85,23 @@ void anadirDispositivo(){
         archivo << "Interface: eth" << (rand() % 8) << "\n";
         archivo.close();
     }
+    dispNuevo.agregarConfiguracion(confNuevo);
 
-
-
-    delete[] listaDispositivos;
-
+    // Redimensionar usando Copy Constructor (¡Sin los hacks de nullptr!)
+    Dispositivo* temporal = new Dispositivo[numDispositivos + 1];
+    for (int i = 0; i < numDispositivos; i++) temporal[i] = listaDispositivos[i];
     temporal[numDispositivos] = dispNuevo;
-
-    dispNuevo.configs = nullptr; //DESVINCULAR LISTA DE CONFIGS PARA QUE NO SE BORRE, REFORMAR COPIAS DE LA CLASE DISPOSITIVO
-
+    delete[] listaDispositivos;
     listaDispositivos = temporal;
-
     numDispositivos++;
-    
 
-    std::cout << "Dispositivo añadido con exito (ID: " << nuevoId << ")" << std::endl;
-    
-    
+    // Añadir a pendientes de subir
+    actualizarDispositivosNuevos(nuevoId, nombre, &confNuevo);
 
+    // Log
+    registrarLog("Anyadir dispositivo '" + std::string(nombre) + "' (ID: " + std::to_string(nuevoId) + ")");
 
+    std::cout << "Dispositivo anadido con exito (ID: " << nuevoId << ")" << std::endl;
 } 
 
 void listarDispositivos(){
@@ -121,28 +136,69 @@ void eliminarDispositivo(){
         std::cout << "Error: No se encontro ningun dispositivo con el ID " << id << ".\n";
         return;
     }
-    if (listaDispositivos[index].configs != nullptr) {
-        delete[] listaDispositivos[index].configs;
-        listaDispositivos[index].configs = nullptr; 
-    }
 
+    // Usando copia profunda
     Dispositivo* nuevaLista = new Dispositivo[numDispositivos - 1];
-
-    for (int i = 0; i < index; i++) {
-        nuevaLista[i] = listaDispositivos[i];
-        listaDispositivos[i].configs = nullptr; //DESVINCULAR LISTA DE CONFIGS PARA QUE NO SE BORRE, REFORMAR COPIAS DE LA CLASE DISPOSITIVO
+    for (int i = 0, j = 0; i < numDispositivos; i++) {
+        if (i != index) nuevaLista[j++] = listaDispositivos[i];
     }
-
-    for (int i = index + 1; i < numDispositivos; i++) {
-        nuevaLista[i - 1] = listaDispositivos[i];
-        listaDispositivos[i].configs = nullptr; //DESVINCULAR LISTA DE CONFIGS PARA QUE NO SE BORRE, REFORMAR COPIAS DE LA CLASE DISPOSITIVO
-
-    }
-    
     delete[] listaDispositivos;
     listaDispositivos = nuevaLista;
-
     numDispositivos--;
+
+    registrarLog("Eliminar dispositivo (ID: " + std::to_string(id) + ")");
     std::cout << "Dispositivo con ID " << id << " eliminado correctamente.\n";
 
+}
+
+// Añadir configuración a dispositivo existente
+void anadirConfiguracion() {
+    std::cout << "===========================================\n";
+    std::cout << "           LISTA DISPOSITIVOS\n";
+    std::cout << "===========================================\n\n";
+    listarDispositivos();
+    
+    int id;
+    std::cout << "\nIntroduce el ID del dispositivo: ";
+    std::cin >> id;
+
+    int index = -1;
+    for (int i = 0; i < numDispositivos; i++) {
+        if (listaDispositivos[i].id == id) { index = i; break; }
+    }
+
+    if (index == -1) {
+        std::cout << "Error: No se encontro ningun dispositivo con el ID " << id << ".\n";
+        return;
+    }
+
+    int nuevaVersion = 1;
+    if (listaDispositivos[index].num_configs > 0) {
+        nuevaVersion = listaDispositivos[index].configs[listaDispositivos[index].num_configs - 1].version + 1;
+    }
+
+    char fechaActual[256];
+    time_t ahora = time(0);
+    struct tm tstruct = *localtime(&ahora);
+    strftime(fechaActual, sizeof(fechaActual), "%d/%m/%Y", &tstruct);
+
+    Configuracion confNuevo(nuevaVersion, "", fechaActual);
+    sprintf(confNuevo.ruta, "confs/%s_%s_v%d.txt", nombreCliente.c_str(), listaDispositivos[index].nombre, nuevaVersion);
+
+    std::ofstream archivo(confNuevo.ruta);
+    if (archivo.is_open()) {
+        srand(time(NULL) + id + nuevaVersion);
+        archivo << "--- ROUTER CONFIG FILE (UPDATE) ---\n";
+        archivo << "Device: " << listaDispositivos[index].nombre << "\n";
+        archivo << "Version: v" << nuevaVersion << "\n";
+        archivo << "Generated: " << fechaActual << "\n";
+        archivo << "Status: Active\n";
+        archivo.close();
+    }
+
+    listaDispositivos[index].agregarConfiguracion(confNuevo);
+    actualizarDispositivosNuevos(id, listaDispositivos[index].nombre, &confNuevo);
+    
+    registrarLog("Añadida configuracion v" + std::to_string(nuevaVersion) + " al dispositivo " + std::string(listaDispositivos[index].nombre));
+    std::cout << "Configuracion v" << nuevaVersion << " anadida al dispositivo '" << listaDispositivos[index].nombre << "'.\n";
 }

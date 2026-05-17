@@ -15,6 +15,11 @@ public:
 
     Dispositivo();
     Dispositivo(int id, const char* nombre);
+
+    // Deep Copy
+    Dispositivo(const Dispositivo& otro);
+    Dispositivo& operator=(const Dispositivo& otro);
+
     ~Dispositivo();
 
     // Getters

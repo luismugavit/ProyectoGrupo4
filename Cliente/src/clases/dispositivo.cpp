@@ -17,7 +17,39 @@
 
  }
 
+// Constructor de copia profundo
+Dispositivo::Dispositivo(const Dispositivo& otro) {
+    id = otro.id;
+    strcpy(nombre, otro.nombre);
+    num_configs = otro.num_configs;
+    if (num_configs > 0) {
+        configs = new Configuracion[num_configs];
+        for (int i = 0; i < num_configs; i++) {
+            configs[i] = otro.configs[i];
+        }
+    } else {
+        configs = nullptr;
+    }
+}
 
+// Operador de asignación profundo
+Dispositivo& Dispositivo::operator=(const Dispositivo& otro) {
+    if (this != &otro) {
+        delete[] configs; // Liberar memoria previa
+        id = otro.id;
+        strcpy(nombre, otro.nombre);
+        num_configs = otro.num_configs;
+        if (num_configs > 0) {
+            configs = new Configuracion[num_configs];
+            for (int i = 0; i < num_configs; i++) {
+                configs[i] = otro.configs[i];
+            }
+        } else {
+            configs = nullptr;
+        }
+    }
+    return *this;
+}
 
 
 Dispositivo::~Dispositivo() {

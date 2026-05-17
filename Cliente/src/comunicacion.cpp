@@ -6,6 +6,9 @@
 #include "../headers/interfaz.h"
 #include "../headers/comunicacion.h"
 
+#include <fstream>
+#include "../headers/funcionalidades.h"
+
 #define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 6000
 
@@ -13,6 +16,10 @@ extern Dispositivo* listaDispositivos;
 extern int numDispositivos;
 extern std::string nombreCliente;
 
+extern Dispositivo* dispositivosNuevos;
+extern int numDispositivosNuevos;
+extern std::string loginUser;
+extern std::string loginPass;
 
 // Función para garantizar que se lee un solo mensaje a la vez
 int recibirMensajeB(SOCKET sock, char* buffer, int max_len) {
@@ -92,6 +99,10 @@ int conectarServidorB(){
 
     std::cout << "Password: ";
     std::cin >> password;
+
+    // Guardar las credenciales
+    loginUser = usuario;
+    loginPass = password;
 
 
     std::string login_msg = "LOGIN " + usuario + " " + password;
@@ -202,4 +213,69 @@ int conectarServidorB(){
 
     return 0;
 
+}
+
+void subirAlServidor() {
+    if (numDispositivosNuevos == 0) { std::cout << "No hay cambios nuevos que subir.\n"; return; }
+
+    WSADATA wsaData; SOCKET sock; struct sockaddr_in server; char buffer[512];
+    WSAStartup(MAKEWORD(2,2), &wsaData); sock = socket(AF_INET, SOCK_STREAM, 0);
+    server.sin_family = AF_INET; server.sin_port = htons(SERVER_PORT); server.sin_addr.s_addr = inet_addr(SERVER_IP);
+    connect(sock, (struct sockaddr*)&server, sizeof(server));
+
+    std::string login_msg = "LOGIN " + loginUser + " " + loginPass;
+    send(sock, login_msg.c_str(), login_msg.size() + 1, 0);
+    recibirMensajeB(sock, buffer, sizeof(buffer));
+
+    // Drenar datos viejos que envia el server
+    recibirMensajeB(sock, buffer, sizeof(buffer)); int numD; sscanf(buffer, "NUM_DISPOSITIVOS %d", &numD);
+    for (int i = 0; i < numD; i++) {
+        recibirMensajeB(sock, buffer, sizeof(buffer)); int id, nc; char nm[256]; sscanf(buffer, "DISPOSITIVO %d %s %d", &id, nm, &nc);
+        for (int j = 0; j < nc; j++) {
+            recibirMensajeB(sock, buffer, sizeof(buffer)); recibirMensajeB(sock, buffer, sizeof(buffer));
+            long fileSize = 0; sscanf(buffer, "FILE_SIZE %ld", &fileSize);
+            long restantes = fileSize; char fileBuf[1024];
+            while (restantes > 0) {
+                int aLeer = (restantes < sizeof(fileBuf)) ? restantes : sizeof(fileBuf);
+                int leidos = recv(sock, fileBuf, aLeer, 0);
+                if (leidos > 0) restantes -= leidos; else break;
+            }
+        }
+    }
+    recibirMensajeB(sock, buffer, sizeof(buffer)); // END
+
+    // PROTOCOLO DE SUBIDA
+    std::string uploadStart = "UPLOAD_START"; send(sock, uploadStart.c_str(), uploadStart.size() + 1, 0);
+
+    for (int i = 0; i < numDispositivosNuevos; i++) {
+        Dispositivo& d = dispositivosNuevos[i]; char msg[256];
+        sprintf(msg, "DISPOSITIVO %d %s %d", d.id, d.nombre, d.num_configs);
+        send(sock, msg, strlen(msg) + 1, 0);
+
+        for (int j = 0; j < d.num_configs; j++) {
+            Configuracion& c = d.configs[j];
+            sprintf(msg, "CONFIG %d %s %s", c.version, c.ruta, c.fecha); send(sock, msg, strlen(msg) + 1, 0);
+            
+            std::ifstream file(c.ruta, std::ios::binary | std::ios::ate);
+            if (file.is_open()) {
+                long size = file.tellg(); file.seekg(0, std::ios::beg);
+                sprintf(msg, "FILE_SIZE %ld", size); send(sock, msg, strlen(msg) + 1, 0);
+                char* fileBuffer = new char[size];
+                if (file.read(fileBuffer, size)) send(sock, fileBuffer, size, 0);
+                delete[] fileBuffer; file.close();
+            } else {
+                sprintf(msg, "FILE_SIZE 0"); send(sock, msg, strlen(msg) + 1, 0);
+            }
+        }
+    }
+
+    std::string uploadEnd = "UPLOAD_END"; send(sock, uploadEnd.c_str(), uploadEnd.size() + 1, 0);
+    recibirMensajeB(sock, buffer, sizeof(buffer));
+    
+    if (std::string(buffer) == "UPLOAD_OK") {
+        registrarLog("Subir cambios al servidor (" + std::to_string(numDispositivosNuevos) + " dispositivos)");
+        std::cout << "Cambios subidos correctamente al servidor.\n";
+        delete[] dispositivosNuevos; dispositivosNuevos = nullptr; numDispositivosNuevos = 0;
+    }
+    closesocket(sock); WSACleanup();
 }
