@@ -142,6 +142,7 @@ void eliminarDispositivo(){
         listaDispositivos[index].configs = nullptr; 
     }
 
+<<<<<<< HEAD
 
     // if (listaDispositivos[index].configs != nullptr) {
     //     delete[] listaDispositivos[index].configs;
@@ -149,6 +150,8 @@ void eliminarDispositivo(){
     // }
 
     // Usando copia profunda
+=======
+>>>>>>> parent of aa99634 (correccion errores y funcionalidad)
     Dispositivo* nuevaLista = new Dispositivo[numDispositivos - 1];
     for (int i = 0, j = 0; i < numDispositivos; i++) {
         if (i != index) nuevaLista[j++] = listaDispositivos[i];
