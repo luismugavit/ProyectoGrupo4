@@ -23,9 +23,8 @@ void mostrarMenuGestionDispositivos() {
     std::cout << "1. Anyadir dispositivos\n";
     std::cout << "2. Listar Dispositivos\n";
     std::cout << "3. Eliminar Dispositivos\n";
-    std::cout << "4. Anyadir Configuracion\n";
-    std::cout << "5. Volver\n";
-    std::cout << "6. Salir\n";
+    std::cout << "4. Volver\n";
+    std::cout << "5. Salir\n";
     std::cout << "Seleccione una opcion > ";
 
 }
@@ -89,16 +88,13 @@ void ejecutarMenuGestionDispositivos() {
                 
                 eliminarDispositivo();
                 break;
-            case 4:
-                anadirConfiguracion();
-                break;
 
-            case 5:
+            case 4:
                 std::cout << "Volviendo al menu principal...\n";
                 volver = true;
                 break;
-            
-            case 6:
+
+            case 5:
                 std::cout << "Saliendo del programa...\n";
                 exit(0);
                 break;
