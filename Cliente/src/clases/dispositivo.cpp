@@ -83,8 +83,9 @@ void Dispositivo::setNombre(const char* nombre) {
 }
 
 void Dispositivo::agregarConfiguracion(const Configuracion& config) {
+
     Configuracion* nuevo = new Configuracion[num_configs + 1];
-    
+
     for (int i = 0; i < num_configs; i++) {
         nuevo[i] = configs[i];
     }
@@ -92,6 +93,7 @@ void Dispositivo::agregarConfiguracion(const Configuracion& config) {
     
     delete[] configs;
     configs = nuevo;
+    
     num_configs++;
 }
 

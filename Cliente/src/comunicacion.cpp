@@ -278,7 +278,7 @@ void subirAlServidor() {
     recibirMensajeB(sock, buffer, sizeof(buffer));
     
     if (std::string(buffer) == "UPLOAD_OK") {
-        registrarLog("Subir cambios al servidor (" + std::to_string(numDispositivosNuevos) + " dispositivos)");
+       // registrarLog("Subir cambios al servidor (" + std::to_string(numDispositivosNuevos) + " dispositivos)");
         std::cout << "Cambios subidos correctamente al servidor.\n";
         delete[] dispositivosNuevos; dispositivosNuevos = nullptr; numDispositivosNuevos = 0;
     }

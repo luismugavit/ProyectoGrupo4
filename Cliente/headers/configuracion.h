@@ -18,7 +18,7 @@ public:
     int getVersion() const;
     const char* getRuta() const;
     const char* getFecha() const;
-
+    Configuracion& operator=(const Configuracion& other);
     // Setters
     void setVersion(int version);
     void setRuta(const char* ruta);

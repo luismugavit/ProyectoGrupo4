@@ -10,6 +10,19 @@ Configuracion::Configuracion(int version, const char* ruta, const char* fecha)
     setRuta(ruta);
     setFecha(fecha);
 }
+
+Configuracion& Configuracion::operator=(const Configuracion& other) {
+        // Evitar autoasignación
+        if (this != &other) {
+            version = other.version;
+
+            std::strcpy(ruta, other.ruta);
+            std::strcpy(fecha, other.fecha);
+        }
+        return *this;
+    }
+
+    
 Configuracion::~Configuracion() {}
 int Configuracion::getVersion() const {
     return version;
@@ -20,6 +33,7 @@ const char* Configuracion::getRuta() const {
 const char* Configuracion::getFecha() const {
     return fecha;
 }
+
 void Configuracion::setVersion(int version) {
     this->version = version;
 }
