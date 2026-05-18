@@ -2,3 +2,5 @@ admin, Log-in, 13/05/2026 09:10:15
 admin, Log-in, 13/05/2026 09:13:04
 admin, Log-in, 13/05/2026 09:19:24
 admin, Crear cliente, 13/05/2026 09:19:41
+admin, Log-in, 18/05/2026 16:42:16
+admin, Dispositivo eliminado, 18/05/2026 16:42:44

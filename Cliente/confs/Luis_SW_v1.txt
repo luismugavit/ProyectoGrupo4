@@ -1,7 +1,0 @@
---- ROUTER CONFIG FILE ---
-Device: SW
-Generated: 18/05/2026
-IPv4: 10.0.144.58
-Gateway: 10.0.0.1
-DNS: 8.8.8.8
-Interface: eth5

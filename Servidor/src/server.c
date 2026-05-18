@@ -17,6 +17,59 @@ extern cliente* listaClientes;
 extern int numClientes;
 extern sqlite3 *db;
 
+#include <stdio.h>
+#include <stdbool.h>
+
+/**
+ * Compara la lista guardada en memoria (vieja) con la recibida por el socket (nueva).
+ * Identifica qué IDs han desaparecido para poder borrarlos de la base de datos.
+ */
+void detectarDispositivosEliminados(dispositivo *listaVieja, int numVieja, 
+                                   dispositivo *listaNueva, int numNueva,
+                                   int id_cliente, sqlite3 *db) {
+    
+    printf("--- Iniciando comparación de dispositivos para cliente %d ---\n", id_cliente);
+
+    for (int i = 0; i < numVieja; i++) {
+        bool encontrado = false;
+        int idBuscado = listaVieja[i].id;
+
+        // Buscamos el ID viejo en la lista nueva
+        for (int j = 0; j < numNueva; j++) {
+            if (listaNueva[j].id == idBuscado) {
+                encontrado = true;
+                break;
+            }
+        }
+
+        // Si no se encontró en la lista nueva, es que ha sido eliminado
+        if (!encontrado) {
+            printf("[ALERTA] El dispositivo ID: %d (%s) ya no existe en el cliente. Borrando...\n", 
+                    idBuscado, listaVieja[i].nombre);
+            
+            for (int k = 0; k < listaVieja[i].num_configs; k++) {
+                const char* rutaArchivo = listaVieja[i].configs[k].ruta;
+                
+                if (remove(rutaArchivo) == 0) {
+                    printf("  -> Archivo físico eliminado: %s\n", rutaArchivo);
+                } else {
+                    // Usamos perror para ver el motivo exacto (ej: archivo no existe)
+                    perror("  -> Error al eliminar archivo físico");
+                }
+            }
+
+
+            // Llamamos a tu función de base de datos
+            int res = eliminarDispositivoDB(db, listaVieja[i], id_cliente);
+            
+            if (res == SQLITE_OK) {
+                printf("Dispositivo %d eliminado con éxito de la BD.\n", idBuscado);
+            }
+        }
+    }
+    printf("--- Fin de la sincronización de borrado ---\n");
+}
+
 // Función para evitar concatenación TCP en el lado del servidor
 int recibirMensajeServidor(SOCKET sock, char* buffer, int max_len) {
     int bytes_leidos = 0;
@@ -234,18 +287,24 @@ int establecerConexion(){
                     strcpy(nuevosDispositivos[i].nombre, nombre);
                     nuevosDispositivos[i].num_configs = num_configs;
                     nuevosDispositivos[i].configs = (configuracion*)malloc(num_configs * sizeof(configuracion));
-
+                    //insertDispositivoDB(db, nuevosDispositivos[i], cliente_encontrado->id);
 
                     for (int j = 0; j < num_configs; j++) {
                         recibirMensajeServidor(client_socket, buffer, sizeof(buffer));
                         int version;
                         char ruta[256]; // [Longitud: 256 caracteres para la ruta original de config]
                         char fecha[50]; // [Longitud: 50 caracteres para la fecha de config]
-                        sscanf(buffer, "CONFIG %d %s %s", &version, ruta, fecha);
-                        
+                        char rutaNU[256];
+                        sscanf(buffer, "CONFIG %d %s %s", &version, rutaNU, fecha);
+                        sprintf(ruta, "src/confs_cliente/%s",rutaNU);
+                        printf("%s\n",buffer);
+                        printf("%s\n",ruta);
                         nuevosDispositivos[i].configs[j].version = version;
                         strcpy(nuevosDispositivos[i].configs[j].ruta, ruta);
                         strcpy(nuevosDispositivos[i].configs[j].fecha, fecha);
+
+                    
+                        //insertConfiguracionDB(db,nuevosDispositivos[i].configs[j], nuevosDispositivos[i].id );
 
                         recibirMensajeServidor(client_socket, buffer, sizeof(buffer));
                         long fileSize;
@@ -253,7 +312,7 @@ int establecerConexion(){
 
                         if (fileSize > 0) {
                             char rutaDestino[512]; 
-                            sprintf(rutaDestino, "src/confs_cliente/%s", ruta);
+                            sprintf(rutaDestino, "%s", ruta);
                             
                             FILE* file = fopen(rutaDestino, "wb");
                             long bytesRestantes = fileSize;
@@ -285,14 +344,21 @@ int establecerConexion(){
                             }
                         }
                     }
+                    insertDispositivoDB(db, nuevosDispositivos[i], cliente_encontrado->id);
                 }
                 recibirMensajeServidor(client_socket, buffer, sizeof(buffer)); // Leer "END"
 
                 // TODO:BASE DE DATOS
 
+                detectarDispositivosEliminados(cliente_encontrado->listaDispositivos, cliente_encontrado->numDispositivos, 
+                                   nuevosDispositivos,numNuevos,
+                                   cliente_encontrado->id, db);
+
                 
                 cliente_encontrado->listaDispositivos = nuevosDispositivos;
                 cliente_encontrado->numDispositivos = numNuevos;
+
+
                 
                 printf("Sincronizacion de datos y archivos completada.\n");
                 

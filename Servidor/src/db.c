@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include "../headers/cliente.h"
 #include "../headers/dispositivo.h"
@@ -168,6 +169,8 @@ int insertDispositivoDB(sqlite3 *db, dispositivo disp, int id_cliente) {
 }
 
 int insertConfiguracionDB(sqlite3 *db, configuracion conf, int id_dispositivo) {
+    printf("INSERTANDO CONFIG %s   %d\n", conf.ruta, conf.version);
+    
     sqlite3_stmt *stmt;
     int result;
 
@@ -248,31 +251,56 @@ int eliminarClienteBD(sqlite3 *db, int idCliente) {
     return result;
 }
 
-int eliminarDispositivoDB(sqlite3 *db, int id_dispositivo) {
+int eliminarDispositivoDB(sqlite3 *db, dispositivo disp, int id_cliente) {
     sqlite3_stmt *stmt;
     int result;
 
-    const char *sql_disp = "DELETE FROM Dispositivo WHERE ID_DISPOSITIVO = ?";
+    printf("--- Iniciando limpieza del Dispositivo: %s (ID: %d) ---\n", disp.nombre, disp.id);
+
+    // 1. RECORRER LA LISTA DE CONFIGURACIONES DEL DISPOSITIVO
+    for (int i = 0; i < disp.num_configs; i++) {
+        const char* rutaActual = disp.configs[i].ruta;
+
+        // // A. Borrar el archivo físico (.txt)
+        // if (remove(rutaActual) == 0) {
+        //     printf("  [Disco] Archivo eliminado: %s\n", rutaActual);
+        // } else {
+        //     printf("  [Disco] No se pudo borrar %s (quizás no existe)\n", rutaActual);
+        // }
+
+        // B. Borrar el registro en la tabla CONFIGURACION por RUTA
+        const char *sql_conf = "DELETE FROM CONFIGURACION WHERE RUTA = ?";
+        if (sqlite3_prepare_v2(db, sql_conf, -1, &stmt, NULL) == SQLITE_OK) {
+            sqlite3_bind_text(stmt, 1, rutaActual, -1, SQLITE_TRANSIENT);
+            
+            if (sqlite3_step(stmt) != SQLITE_DONE) {
+                printf("  [BD] Error al borrar registro de ruta: %s\n", sqlite3_errmsg(db));
+            } else {
+                printf("  [BD] Registro eliminado para ruta: %s\n", rutaActual);
+            }
+            sqlite3_finalize(stmt);
+        }
+    }
+
+    // 2. BORRAR EL DISPOSITIVO DE LA TABLA DISPOSITIVO
+    // Usamos ID_DISPOSITIVO e ID_CLIENTE para asegurar la clave primaria compuesta
+    const char *sql_disp = "DELETE FROM DISPOSITIVO WHERE ID_DISPOSITIVO = ? AND ID_CLIENTE = ?";
+    
     result = sqlite3_prepare_v2(db, sql_disp, -1, &stmt, NULL);
-    
-    if (result != SQLITE_OK) {
-        printf("Error (PREPARE DELETE Dispositivo): %s\n", sqlite3_errmsg(db));
-        return result; 
-    }
+    if (result == SQLITE_OK) {
+        sqlite3_bind_int(stmt, 1, disp.id);
+        sqlite3_bind_int(stmt, 2, id_cliente);
 
-    sqlite3_bind_int(stmt, 1, id_dispositivo);
-
-    result = sqlite3_step(stmt);
-    if (result != SQLITE_DONE) {
-        printf("Error al eliminar Dispositivo %d de la BD: %s\n", id_dispositivo, sqlite3_errmsg(db));
+        result = sqlite3_step(stmt);
+        if (result != SQLITE_DONE) {
+            printf("[BD] Error final al borrar dispositivo: %s\n", sqlite3_errmsg(db));
+        } else {
+            printf("[BD] Dispositivo %d eliminado correctamente del Cliente %d.\n", disp.id, id_cliente);
+        }
         sqlite3_finalize(stmt);
-        return result; 
     }
-    
-    sqlite3_finalize(stmt);
-    printf("Sincronizacion completada: Dispositivo (y sus configuraciones) eliminado de la Base de Datos.\n");
 
-    return SQLITE_OK;
+    return (result == SQLITE_DONE) ? SQLITE_OK : SQLITE_ERROR;
 }
 
 cliente* cargarBD(sqlite3 *db, int *totalClientes){
