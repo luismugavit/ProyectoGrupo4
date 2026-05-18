@@ -12,7 +12,7 @@ void mostrarMenuPrincipal() {
     std::cout << "===========================================\n";
     std::cout << "              MENU PRINCIPAL\n";
     std::cout << "===========================================\n";
-    std::cout << "1. Gestionar Dipositivos\n";
+    std::cout << "1. Gestionar Dispositivos\n";
     std::cout << "2. Guardar cambios en servidor\n";
     std::cout << "3. Salir\n";
     std::cout << "Seleccione una opcion > ";
@@ -26,13 +26,15 @@ void mostrarMenuGestionDispositivos() {
     std::cout << "2. Listar Dispositivos\n";
     std::cout << "3. Eliminar Dispositivos\n";
     std::cout << "4. Anadir Configuracion\n";
-    std::cout << "5. Volver\n";
-    std::cout << "6. Salir\n";
+    std::cout << "5. Ver Historial de Configuraciones\n";
+    std::cout << "6. Ver Contenido de una Configuracion\n";
+    std::cout << "7. Revertir a Version Anterior (Rollback)\n"; 
+    std::cout << "8. Volver\n";
+    std::cout << "9. Salir\n";
     std::cout << "Seleccione una opcion > ";
-
 }
+
 void ejecutarMenuPrincipal(){
-    
     int opcion;
     bool volver = false;
     do {
@@ -45,6 +47,11 @@ void ejecutarMenuPrincipal(){
                 break;
 
             case 2:
+                for(int i = 0; i < numDispositivos; i++){
+                    for(int j = 0; j < listaDispositivos[i].num_configs;j++){
+                        std::cout << "CCCCC" << listaDispositivos[i].configs[j].ruta<< "\n";
+                    }
+                }
                 subirCambios(sock);
                 break;
 
@@ -77,28 +84,39 @@ void ejecutarMenuGestionDispositivos() {
                 break;
 
             case 2:
-            
                 std::cout << "===========================================\n";
                 std::cout << "           LISTA DISPOSITIVOS\n";
                 std::cout << "===========================================\n\n";
-
-
+                std::cout << "ID    NOMBRE       VERSION\n";
                 listarDispositivos();
                 break;
 
             case 3:
-                
                 eliminarDispositivo();
                 break;
+
             case 4:
                 anadirConfiguracion();
                 break;
+
             case 5:
+                mostrarHistorialDispositivo();
+                break;
+
+            case 6:
+                verContenidoConfiguracion();
+                break;
+
+            case 7: 
+                revertirConfiguracion();
+                break;
+
+            case 8: 
                 std::cout << "Volviendo al menu principal...\n";
                 volver = true;
                 break;
 
-            case 6:
+            case 9: 
                 std::cout << "Saliendo del programa...\n";
                 exit(0);
                 break;

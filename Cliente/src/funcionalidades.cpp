@@ -273,3 +273,183 @@ void anadirConfiguracion(){
 
 
 }
+void mostrarHistorialDispositivo() {
+    int id;
+    std::cout << "Introduce el ID del dispositivo para ver su historial: ";
+    std::cin >> id;
+
+    int index = -1;
+    for (int i = 0; i < numDispositivos; i++) {
+        if (listaDispositivos[i].id == id) {
+            index = i;
+            break;
+        }
+    }
+
+    if (index == -1) {
+        std::cout << "Error: No se encontro ningun dispositivo con el ID " << id << ".\n";
+        return;
+    }
+
+    Dispositivo& disp = listaDispositivos[index];
+
+    std::cout << "\n==================================================\n";
+    std::cout << "HISTORIAL DE CONFIGURACIONES - " << disp.nombre << " (ID: " << disp.id << ")\n";
+    std::cout << "==================================================\n";
+    std::cout << "VERSION    FECHA          ARCHIVO\n";
+    std::cout << "--------------------------------------------------\n";
+
+    if (disp.num_configs == 0 || disp.configs == nullptr) {
+        std::cout << "Este dispositivo no tiene configuraciones registradas.\n";
+    } else {
+        for (int j = 0; j < disp.num_configs; j++) {
+            std::cout << "v" << disp.configs[j].version << "         "
+                      << disp.configs[j].fecha << "     "
+                      << disp.configs[j].ruta << "\n";
+        }
+    }
+    std::cout << "==================================================\n\n";
+}
+void verContenidoConfiguracion() {
+    int id, version;
+    std::cout << "Introduce el ID del dispositivo: ";
+    std::cin >> id;
+    std::cout << "Introduce la version de configuracion que deseas leer (ej. 1): ";
+    std::cin >> version;
+
+    int index = -1;
+    for (int i = 0; i < numDispositivos; i++) {
+        if (listaDispositivos[i].id == id) {
+            index = i;
+            break;
+        }
+    }
+
+    if (index == -1) {
+        std::cout << "Error: No se encontro el dispositivo.\n";
+        return;
+    }
+
+    // Buscar si la versión solicitada existe en el dispositivo
+    int configIndex = -1;
+    for (int j = 0; j < listaDispositivos[index].num_configs; j++) {
+        if (listaDispositivos[index].configs[j].version == version) {
+            configIndex = j;
+            break;
+        }
+    }
+
+    if (configIndex == -1) {
+        std::cout << "Error: La version v" << version << " no existe para este dispositivo.\n";
+        return;
+    }
+
+    // Construir la ruta al archivo físico
+    char rutaNu[256];
+    sprintf(rutaNu, "confs/%s", listaDispositivos[index].configs[configIndex].ruta);
+
+    std::ifstream archivo(rutaNu);
+    if (!archivo.is_open()) {
+        std::cout << "Error: No se pudo abrir el archivo fisico (" << rutaNu << "). Puede que haya sido borrado.\n";
+        return;
+    }
+
+    std::cout << "\n--- LEYENDO ARCHIVO: " << listaDispositivos[index].configs[configIndex].ruta << " ---\n";
+    std::string linea;
+    while (std::getline(archivo, linea)) {
+        std::cout << linea << "\n";
+    }
+    std::cout << "--------------------------------------------------\n\n";
+    archivo.close();
+}
+void revertirConfiguracion() {
+    int id, versionOrigen;
+    std::cout << "Introduce el ID del dispositivo: ";
+    std::cin >> id;
+    std::cout << "Introduce la version a la que deseas regresar (Rollback): ";
+    std::cin >> versionOrigen;
+
+    int index = -1;
+    for (int i = 0; i < numDispositivos; i++) {
+        if (listaDispositivos[i].id == id) {
+            index = i;
+            break;
+        }
+    }
+
+    if (index == -1) {
+        std::cout << "Error: Dispositivo no encontrado.\n";
+        return;
+    }
+
+    Dispositivo& disp = listaDispositivos[index];
+
+    // 1. Verificar si la versión destino existe para copiar de ella
+    int configOrigenIndex = -1;
+    for (int j = 0; j < disp.num_configs; j++) {
+        if (disp.configs[j].version == versionOrigen) {
+            configOrigenIndex = j;
+            break;
+        }
+    }
+
+    if (configOrigenIndex == -1) {
+        std::cout << "Error: La version v" << versionOrigen << " no existe en este dispositivo.\n";
+        return;
+    }
+
+    // 2. Preparar los datos de la NUEVA versión resultante del rollback
+    Configuracion nuevaConf;
+    nuevaConf.version = disp.num_configs + 1;
+    
+    time_t ahora = time(0);
+    struct tm tstruct = *localtime(&ahora);
+    strftime(nuevaConf.fecha, sizeof(nuevaConf.fecha), "%d/%m/%Y", &tstruct);
+
+    sprintf(nuevaConf.ruta, "%s_%s_v%d.txt", nombreCliente.c_str(), disp.nombre, nuevaConf.version);
+
+    // 3. Leer el archivo antiguo y escribirlo simultáneamente en el nuevo
+    char rutaVieja[256];
+    char rutaNueva[256];
+    sprintf(rutaVieja, "confs/%s", disp.configs[configOrigenIndex].ruta);
+    sprintf(rutaNueva, "confs/%s", nuevaConf.ruta);
+
+    std::ifstream archivoViejo(rutaVieja);
+    std::ofstream archivoNuevo(rutaNueva);
+
+    if (!archivoViejo.is_open() || !archivoNuevo.is_open()) {
+        std::cout << "Error critico al manipular los archivos físicos para el Rollback.\n";
+        if (archivoViejo.is_open()) archivoViejo.close();
+        return;
+    }
+
+    archivoNuevo << "--- ROLLBACK TO VERSION " << versionOrigen << " (GENERATED AS v" << nuevaConf.version << ") ---\n";
+    std::string linea;
+    while (std::getline(archivoViejo, linea)) {
+        if (linea.find("---") == std::string::npos) {
+            archivoNuevo << linea << "\n";
+        }
+    }
+    archivoViejo.close();
+    archivoNuevo.close();
+
+    int cantidadActual = disp.num_configs;
+    Configuracion* tempConfigs = new Configuracion[cantidadActual + 1];
+
+    for (int j = 0; j < cantidadActual; j++) {
+        tempConfigs[j] = disp.configs[j];
+    }
+
+    tempConfigs[cantidadActual] = nuevaConf;
+
+    if (disp.configs != nullptr) {
+        delete[] disp.configs;
+    }
+    
+    disp.configs = tempConfigs;
+    disp.num_configs++;
+
+    std::cout << "Rollback completado con exito. El dispositivo " << disp.nombre 
+              << " ahora tiene la configuracion de la v" << versionOrigen 
+              << " guardada en la nueva v" << nuevaConf.version << ".\n";
+}

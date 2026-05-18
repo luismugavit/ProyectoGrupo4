@@ -14,5 +14,8 @@ void anadirDispositivo();
 void listarDispositivos();
 void eliminarDispositivo();
 void anadirConfiguracion();
+void mostrarHistorialDispositivo();
+void verContenidoConfiguracion();
+void revertirConfiguracion();
 
 #endif
