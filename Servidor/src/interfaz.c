@@ -474,7 +474,7 @@ void eliminarDispositivo() {
 
         printf("Exito: Dispositivo eliminado correctamente de la memoria.\n");
 
-        eliminarDispositivoDB(db, idSeleccionado);
+        eliminarDispositivoDB(db, (*disp), entrada_id);
 
     } else {
         printf("Operacion cancelada\n");

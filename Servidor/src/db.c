@@ -257,18 +257,9 @@ int eliminarDispositivoDB(sqlite3 *db, dispositivo disp, int id_cliente) {
 
     printf("--- Iniciando limpieza del Dispositivo: %s (ID: %d) ---\n", disp.nombre, disp.id);
 
-    // 1. RECORRER LA LISTA DE CONFIGURACIONES DEL DISPOSITIVO
+
     for (int i = 0; i < disp.num_configs; i++) {
         const char* rutaActual = disp.configs[i].ruta;
-
-        // // A. Borrar el archivo físico (.txt)
-        // if (remove(rutaActual) == 0) {
-        //     printf("  [Disco] Archivo eliminado: %s\n", rutaActual);
-        // } else {
-        //     printf("  [Disco] No se pudo borrar %s (quizás no existe)\n", rutaActual);
-        // }
-
-        // B. Borrar el registro en la tabla CONFIGURACION por RUTA
         const char *sql_conf = "DELETE FROM CONFIGURACION WHERE RUTA = ?";
         if (sqlite3_prepare_v2(db, sql_conf, -1, &stmt, NULL) == SQLITE_OK) {
             sqlite3_bind_text(stmt, 1, rutaActual, -1, SQLITE_TRANSIENT);
@@ -282,8 +273,6 @@ int eliminarDispositivoDB(sqlite3 *db, dispositivo disp, int id_cliente) {
         }
     }
 
-    // 2. BORRAR EL DISPOSITIVO DE LA TABLA DISPOSITIVO
-    // Usamos ID_DISPOSITIVO e ID_CLIENTE para asegurar la clave primaria compuesta
     const char *sql_disp = "DELETE FROM DISPOSITIVO WHERE ID_DISPOSITIVO = ? AND ID_CLIENTE = ?";
     
     result = sqlite3_prepare_v2(db, sql_disp, -1, &stmt, NULL);
@@ -362,7 +351,7 @@ cliente* cargarBD(sqlite3 *db, int *totalClientes){
                             if (archivoConf != NULL) {
                                 fclose(archivoConf);
                             } 
-                               // printf("Advertencia: No se pudo crear )
+                            
                                
                             
                         } else {

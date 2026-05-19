@@ -1,5 +1,6 @@
 #ifndef INTERFAZ_H
 #define INTERFAZ_H
+#include "cliente.h"
 
 void registrarOperacion(const char *usuario, const char *operacion);
 void crearCliente();

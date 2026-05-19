@@ -1,6 +1,0 @@
---- Router CONFIG ---
-Device: Ander
-Type: Router
-Generated: 19/05/2026
-IPv4: 10.0.17.109
-Gateway: 10.0.0.1

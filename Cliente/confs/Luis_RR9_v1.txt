@@ -1,6 +1,0 @@
---- Router CONFIG ---
-Device: RR9
-Type: Router
-Generated: 19/05/2026
-IPv4: 10.0.238.103
-Gateway: 10.0.0.1

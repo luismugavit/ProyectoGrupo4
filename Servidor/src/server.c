@@ -20,57 +20,62 @@ extern sqlite3 *db;
 #include <stdio.h>
 #include <stdbool.h>
 
-/**
- * Compara la lista guardada en memoria (vieja) con la recibida por el socket (nueva).
- * Identifica qué IDs han desaparecido para poder borrarlos de la base de datos.
- */
+void registrarOperacion(const char *usuario, const char *operacion) {
+    
+
+    FILE *archivoLog = fopen("src/logs/registrosLocales.txt", "a");
+    
+    if (archivoLog == NULL) {
+        printf("Error: No se pudo escribir en el archivo de registros.\n");
+        return; 
+    }
+
+ 
+    time_t t = time(NULL);
+    struct tm tiempoLocal = *localtime(&t);
+
+    fprintf(archivoLog, "%s, %s, %02d/%02d/%d %02d:%02d:%02d\n", 
+            usuario, 
+            operacion,
+            tiempoLocal.tm_mday, 
+            tiempoLocal.tm_mon + 1,     
+            tiempoLocal.tm_year + 1900,  
+            tiempoLocal.tm_hour, 
+            tiempoLocal.tm_min, 
+            tiempoLocal.tm_sec);
+
+ 
+    fclose(archivoLog);
+}
+
 void detectarDispositivosEliminados(dispositivo *listaVieja, int numVieja, 
                                    dispositivo *listaNueva, int numNueva,
                                    int id_cliente, sqlite3 *db) {
     
-    printf("--- Iniciando comparación de dispositivos para cliente %d ---\n", id_cliente);
+   
 
     for (int i = 0; i < numVieja; i++) {
         bool encontrado = false;
         int idBuscado = listaVieja[i].id;
-
-        // Buscamos el ID viejo en la lista nueva
         for (int j = 0; j < numNueva; j++) {
             if (listaNueva[j].id == idBuscado) {
                 encontrado = true;
                 break;
             }
         }
-
-        // Si no se encontró en la lista nueva, es que ha sido eliminado
-        if (!encontrado) {
-            printf("[ALERTA] El dispositivo ID: %d (%s) ya no existe en el cliente. Borrando...\n", 
-                    idBuscado, listaVieja[i].nombre);
-            
+        if (!encontrado) {    
             for (int k = 0; k < listaVieja[i].num_configs; k++) {
                 const char* rutaArchivo = listaVieja[i].configs[k].ruta;
                 
-                if (remove(rutaArchivo) == 0) {
-                    printf("  -> Archivo físico eliminado: %s\n", rutaArchivo);
-                } else {
-                    // Usamos perror para ver el motivo exacto (ej: archivo no existe)
+                if (remove(rutaArchivo) != 0) {
                     perror("  -> Error al eliminar archivo físico");
                 }
             }
-
-
-            // Llamamos a tu función de base de datos
-            int res = eliminarDispositivoDB(db, listaVieja[i], id_cliente);
-            
-            if (res == SQLITE_OK) {
-                printf("Dispositivo %d eliminado con éxito de la BD.\n", idBuscado);
-            }
+            int res = eliminarDispositivoDB(db, listaVieja[i], id_cliente);  
         }
     }
     printf("--- Fin de la sincronización de borrado ---\n");
 }
-
-// Función para evitar concatenación TCP en el lado del servidor
 int recibirMensajeServidor(SOCKET sock, char* buffer, int max_len) {
     int bytes_leidos = 0;
     char c; 
@@ -134,32 +139,32 @@ int establecerConexion(){
         printf("Cliente conectado!\n");
 
         int clienteActivo = 1;
-        cliente *cliente_encontrado = NULL; // Guarda la sesión actual
+        cliente *cliente_encontrado = NULL; 
         
-        // Bucle de sesión persistente
+        registrarOperacion("Cliente", "Login Exitoso");
         while (clienteActivo) {
-            char recvBuff[512]; // [Longitud: 512 caracteres para recibir comandos del cliente]
+            char recvBuff[512]; 
             int bytesRecibidos = recv(client_socket, recvBuff, sizeof(recvBuff), 0);
 
             if (bytesRecibidos <= 0) {
-                printf("Cliente desconectado de forma limpia o por error de red.\n");
+                printf("Cliente desconectado.\n");
                 clienteActivo = 0;
                 break;
             }
 
-            printf("Mensaje recibido: %s\n", recvBuff);
+            //printf("Mensaje recibido: %s\n", recvBuff);
 
             if (strncmp(recvBuff, "LOGIN", 5) == 0) {
-                char usuario[50]; // [Longitud: 50 caracteres para el nombre de usuario]
-                char password[50]; // [Longitud: 50 caracteres para la contraseña]
+                char usuario[50]; 
+                char password[50]; 
                 sscanf(recvBuff, "LOGIN %s %s", usuario, password);
 
                 FILE *f = fopen("src/clientes_sesiones.txt", "r");
                 int valido = 0;
 
                 if (f != NULL) {
-                    char file_user[50]; // [Longitud: 50 caracteres para usuario del archivo]
-                    char file_pass[50]; // [Longitud: 50 caracteres para contraseña del archivo]
+                    char file_user[50]; 
+                    char file_pass[50]; 
 
                     while (fscanf(f, "%s %s", file_user, file_pass) != EOF) {
                         if (strcmp(usuario, file_user) == 0 &&
@@ -171,7 +176,7 @@ int establecerConexion(){
                     fclose(f);
                 }
 
-                char sendBuff[512]; // [Longitud: 512 caracteres para mensajes de estado]
+                char sendBuff[512]; 
 
                 if (valido) {
                     strcpy(sendBuff, "OK");
@@ -187,7 +192,7 @@ int establecerConexion(){
                     }
 
                     if (cliente_encontrado != NULL) {
-                        char bufferEnvio[512]; // [Longitud: 512 caracteres para metadatos salientes]
+                        char bufferEnvio[512]; 
 
                         sprintf(bufferEnvio, "NUM_DISPOSITIVOS %d", cliente_encontrado->numDispositivos);
                         send(client_socket, bufferEnvio, strlen(bufferEnvio) + 1, 0);
@@ -202,7 +207,7 @@ int establecerConexion(){
                                 configuracion c = d.configs[j];
 
                                 sprintf(bufferEnvio, "CONFIG %d %s %s", c.version, c.ruta, c.fecha);
-                                printf("%s\n", bufferEnvio);
+                                //printf("%s\n", bufferEnvio);
                                 send(client_socket, bufferEnvio, strlen(bufferEnvio) + 1, 0);
                                 
                                 FILE* file = fopen(c.ruta, "rb");
@@ -213,7 +218,7 @@ int establecerConexion(){
                                     sprintf(bufferEnvio, "FILE_SIZE %ld", fileSize);
                                     send(client_socket, bufferEnvio, strlen(bufferEnvio) + 1, 0);
 
-                                    char fileBuffer[1024]; // [Longitud: 1024 caracteres para bloque de envio de fichero]
+                                    char fileBuffer[1024]; 
                                     size_t bytesRead;
                                     while ((bytesRead = fread(fileBuffer, 1, sizeof(fileBuffer), file)) > 0) {
                                         send(client_socket, fileBuffer, bytesRead, 0);
@@ -240,7 +245,7 @@ int establecerConexion(){
                 
                 // Comprobar que hay sesión activa
                 if (cliente_encontrado == NULL) {
-                    char sendBuff[10]; // [Longitud: 10 caracteres para rechazar]
+                    char sendBuff[10]; 
                     strcpy(sendBuff, "FAIL");
                     send(client_socket, sendBuff, strlen(sendBuff) + 1, 0);
                     printf("Intento de subida sin sesion. Desconectando.\n");
@@ -248,11 +253,11 @@ int establecerConexion(){
                     break;
                 }
 
-                char sendBuff[10]; // [Longitud: 10 caracteres para confirmar subida]
+                char sendBuff[10]; 
                 strcpy(sendBuff, "OK");
                 send(client_socket, sendBuff, strlen(sendBuff) + 1, 0);
 
-                char buffer[512]; // [Longitud: 512 caracteres para metadatos entrantes]
+                char buffer[512]; 
                 recibirMensajeServidor(client_socket, buffer, sizeof(buffer));
                 
                 int numNuevos;
@@ -263,48 +268,43 @@ int establecerConexion(){
                 for (int i = 0; i < numNuevos; i++) {
                     recibirMensajeServidor(client_socket, buffer, sizeof(buffer));
     
-                    // 1. Inicializar variables para evitar arrastrar basura o valores de la vuelta anterior
+                   
                     int id = -1;
                     int num_configs = -1;
-                    char nombre[100] = ""; // [Longitud: 100 caracteres para el nombre del dispositivo]
+                    char nombre[100] = ""; 
                     
-                    printf("Buffer recibido: '%s'\n", buffer);
+                  //  printf("Buffer recibido: '%s'\n", buffer);
                     
-                    // 2. Guardar el resultado de sscanf (debe devolver 3 si lee todo correctamente)
+                   
                     int leidos = sscanf(buffer, "DISPOSITIVO %d %s %d", &id, nombre, &num_configs);
-                    
-                    // 3. Comprobación de errores
+
                     if (leidos != 3) {
                         printf("ERROR LECTURA: sscanf solo leyo %d de 3 elementos.\n", leidos);
                         printf("Valores actuales -> ID: %d, Nombre: '%s', Configs: %d\n", id, nombre, num_configs);
                         
-                        // Si 'nombre' tiene la primera palabra pero 'configs' es -1, el problema son los espacios en el nombre.
-                    } else {
-                        printf("Lectura exitosa -> ID: %d, Configs: %d\n", id, num_configs);
-                    }
+                    } 
+                    // else {
+                    //     //printf("Lectura exitosa -> ID: %d, Configs: %d\n", id, num_configs);
+                    // }
                     
                     nuevosDispositivos[i].id = id;
                     strcpy(nuevosDispositivos[i].nombre, nombre);
                     nuevosDispositivos[i].num_configs = num_configs;
                     nuevosDispositivos[i].configs = (configuracion*)malloc(num_configs * sizeof(configuracion));
-                    //insertDispositivoDB(db, nuevosDispositivos[i], cliente_encontrado->id);
-
+                    
                     for (int j = 0; j < num_configs; j++) {
                         recibirMensajeServidor(client_socket, buffer, sizeof(buffer));
                         int version;
-                        char ruta[256]; // [Longitud: 256 caracteres para la ruta original de config]
-                        char fecha[50]; // [Longitud: 50 caracteres para la fecha de config]
+                        char ruta[256]; 
+                        char fecha[50]; 
                         char rutaNU[256];
                         sscanf(buffer, "CONFIG %d %s %s", &version, rutaNU, fecha);
                         sprintf(ruta, "src/confs_cliente/%s",rutaNU);
-                        printf("%s\n",buffer);
-                        printf("%s\n",ruta);
+                        // printf("%s\n",buffer);
+                        // printf("%s\n",ruta);
                         nuevosDispositivos[i].configs[j].version = version;
                         strcpy(nuevosDispositivos[i].configs[j].ruta, ruta);
                         strcpy(nuevosDispositivos[i].configs[j].fecha, fecha);
-
-                    
-                        //insertConfiguracionDB(db,nuevosDispositivos[i].configs[j], nuevosDispositivos[i].id );
 
                         recibirMensajeServidor(client_socket, buffer, sizeof(buffer));
                         long fileSize;
@@ -346,10 +346,7 @@ int establecerConexion(){
                     }
                     insertDispositivoDB(db, nuevosDispositivos[i], cliente_encontrado->id);
                 }
-                recibirMensajeServidor(client_socket, buffer, sizeof(buffer)); // Leer "END"
-
-                // TODO:BASE DE DATOS
-
+                recibirMensajeServidor(client_socket, buffer, sizeof(buffer)); 
                 detectarDispositivosEliminados(cliente_encontrado->listaDispositivos, cliente_encontrado->numDispositivos, 
                                    nuevosDispositivos,numNuevos,
                                    cliente_encontrado->id, db);
@@ -361,22 +358,13 @@ int establecerConexion(){
 
                 
                 printf("Sincronizacion de datos y archivos completada.\n");
+
                 
-                // printf("DDDDDDDDD:   %d \n",cliente_encontrado->numDispositivos );
-                // printf("DDDDDDDDD:   %d \n",cliente_encontrado->listaDispositivos[1].num_configs);
-                // printf("RRRR  %s\n", cliente_encontrado->listaDispositivos[1].configs[1].ruta);
 
-                for(int i = 0; i < cliente_encontrado->numDispositivos; i++){
-                    for(int j = 0; j < cliente_encontrado->listaDispositivos[i].num_configs; j ++){
-                        printf("RRRR  %s\n", cliente_encontrado->listaDispositivos[i].configs[j].ruta);
-                        printf("AAAAA\n");
-                    }
-                }
-                //printf("RRRR  %s\n", cliente_encontrado->listaDispositivos[1].configs[1].ruta);
             }
-        } // Fin de while(clienteActivo)
-
-        closesocket(client_socket); // Se cierra solo cuando el cliente finaliza la sesión
+        } // Fin de cliente activo
+        
+        closesocket(client_socket);
     }
 
     closesocket(server_socket);

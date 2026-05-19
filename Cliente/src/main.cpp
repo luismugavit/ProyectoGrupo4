@@ -14,18 +14,13 @@ int numDispositivos;
 std::string nombreCliente = "Luis";
 
 
-
-
 int main() {
     
-    conectarServidorB();
-    
+    int conect = conectarServidorB();
 
-    // for (int i = 0; i < numDispositivos; i++) {
-    //     std::cout << "Dispositivo " << i + 1 << ": "<< listaDispositivos[i].getNombre() << std::endl;
-    //     std::cout << "Dispositivo " << i + 1 << ": "<< listaDispositivos[i].getConfigs()[0].getRuta() << std::endl;
-    // }
-    ejecutarMenuPrincipal();
+    if(conect == 0){
+        ejecutarMenuPrincipal();
+    }
 
 }
 

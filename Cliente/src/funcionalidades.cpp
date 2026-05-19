@@ -13,6 +13,25 @@ extern Dispositivo* listaDispositivos;
 extern int numDispositivos;
 extern std::string nombreCliente;
 
+void guardarRegistro(const std::string& accion) {
+    
+    time_t hora = time(0);
+    struct tm tstruct = *localtime(&hora);
+    char fechaHora[50];
+  
+    strftime(fechaHora, sizeof(fechaHora), "%d/%m/%Y %H:%M:%S", &tstruct);
+
+ 
+    std::ofstream archivoLog("logs/registros.txt", std::ios::app);
+
+    if (archivoLog.is_open()) {
+        archivoLog << "[" << fechaHora << "] " << accion << "\n";
+        archivoLog.close();
+    } else {
+        std::cerr << "Error: No se pudo abrir el archivo de registros (../logs/registros.txt).\n";
+    }
+}
+
 void anadirDispositivo(){
 
     char fechaActual[256];
@@ -20,20 +39,19 @@ void anadirDispositivo(){
     struct tm tstruct = *localtime(&ahora);
     strftime(fechaActual, sizeof(fechaActual), "%d/%m/%Y", &tstruct);
 
-    // Calcular nuevo ID
+
     int nuevoId = 1;
     for (int i = 0; i < numDispositivos; i++) {
         if (listaDispositivos[i].id >= nuevoId)
             nuevoId = listaDispositivos[i].id + 1;
     }
 
-    // Pedir nombre
+
     char nombre[100];
     std::cout << "Introduce el nombre del dispositivo: ";
     std::cin.ignore();
     std::cin.getline(nombre, 100);
 
-    // Pedir tipo
     std::cout << "\nTipo de dispositivo:\n";
     std::cout << "  1. Router\n";
     std::cout << "  2. Switch\n";
@@ -43,7 +61,6 @@ void anadirDispositivo(){
     int tipo;
     std::cin >> tipo;
 
-    // Crear dispositivo según tipo (polimorfismo)
     Dispositivo* dispNuevo = nullptr;
 
     if (tipo == 1) {
@@ -72,8 +89,6 @@ void anadirDispositivo(){
     } else {
         dispNuevo = new Dispositivo(nuevoId, nombre);
     }
-
-    // Crear config inicial automática
     dispNuevo->num_configs = 1;
     dispNuevo->configs = new Configuracion[1];
     dispNuevo->configs[0].version = 1;
@@ -95,7 +110,6 @@ void anadirDispositivo(){
         archivo.close();
     }
 
-    // Añadir a la lista
     Dispositivo* temporal = new Dispositivo[numDispositivos + 1];
     for (int i = 0; i < numDispositivos; i++) {
         temporal[i] = listaDispositivos[i];
@@ -110,6 +124,10 @@ void anadirDispositivo(){
     numDispositivos++;
 
     std::cout << "Dispositivo añadido con exito (ID: " << nuevoId << ")\n";
+
+    std::string mensajeLog = "Se ha añadido un dispositivo tipo " + std::to_string(tipo) + 
+                             " con nombre '" + std::string(nombre) + "' y ID " + std::to_string(nuevoId);
+    guardarRegistro(mensajeLog);
 }
 
 void listarDispositivos(){
@@ -166,10 +184,6 @@ void eliminarDispositivo(){
     }
 
 
-    // if (listaDispositivos[index].configs != nullptr) {
-    //     delete[] listaDispositivos[index].configs;
-    //     listaDispositivos[index].configs = nullptr; 
-    // }
 
     Dispositivo* nuevaLista = new Dispositivo[numDispositivos - 1];
 
@@ -189,6 +203,7 @@ void eliminarDispositivo(){
 
     numDispositivos--;
     std::cout << "Dispositivo con ID " << id << " eliminado correctamente.\n";
+    guardarRegistro("Se ha eliminado el dispositivo con ID " + std::to_string(id));
 
 }
 
@@ -251,6 +266,10 @@ void anadirConfiguracion(){
 
     std::cout << "Configuracion v" << nuevaConf.version << " añadida con exito al dispositivo " 
               << listaDispositivos[index].nombre << std::endl;
+
+    std::string mensajeLog = "Se ha añadido la configuracion v" + std::to_string(nuevaConf.version) + 
+                             " al dispositivo '" + listaDispositivos[index].nombre + "'";
+    guardarRegistro(mensajeLog);
 
 
 }

@@ -44,11 +44,9 @@ void ejecutarMenuPrincipal(){
                 break;
 
             case 2:
-                // CODIGO PARA GUARDAR CAMBIOS EN SERVIDOR
                 for(int i = 0; i < numDispositivos; i++){
                     for(int j = 0; j < listaDispositivos[i].num_configs;j++){
                         std::cout << "CCCCC" << listaDispositivos[i].configs[j].ruta<< "\n";
-
                     }
                 }
                 subirCambios(sock);

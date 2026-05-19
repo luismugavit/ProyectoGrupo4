@@ -4,3 +4,12 @@ admin, Log-in, 13/05/2026 09:19:24
 admin, Crear cliente, 13/05/2026 09:19:41
 admin, Log-in, 18/05/2026 16:42:16
 admin, Dispositivo eliminado, 18/05/2026 16:42:44
+Cliente, Login Exitoso, 19/05/2026 21:56:04
+Cliente, Login Exitoso, 19/05/2026 21:58:44
+Cliente, Login Exitoso, 19/05/2026 22:05:42
+Cliente, Login Exitoso, 19/05/2026 22:16:57
+Cliente, Login Exitoso, 19/05/2026 22:17:05
+Cliente, Login Exitoso, 19/05/2026 22:20:07
+Cliente, Login Exitoso, 19/05/2026 22:20:19
+Cliente, Login Exitoso, 19/05/2026 22:20:25
+Cliente, Login Exitoso, 19/05/2026 22:31:04

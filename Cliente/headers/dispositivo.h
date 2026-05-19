@@ -16,17 +16,12 @@ public:
     Dispositivo();
     Dispositivo(int id, const char* nombre);
 
-    // Deep Copy
     Dispositivo(const Dispositivo& otro);
     Dispositivo& operator=(const Dispositivo& otro);
-
-    // Getters
     int getId() const;
     const char* getNombre() const;
     Configuracion* getConfigs() const;
     int getNumConfigs() const;
-
-    // Setters
     void setId(int id);
     void setNombre(const char* nombre);
     void agregarConfiguracion(const Configuracion& config);
@@ -65,7 +60,7 @@ public:
 class PuntoAcceso : public Dispositivo {
 public:
     char ssid[50];
-    char banda[10];   // "2.4GHz", "5GHz" o "Dual"
+    char banda[10]; 
 
     PuntoAcceso();
     PuntoAcceso(int id, const char* nombre);

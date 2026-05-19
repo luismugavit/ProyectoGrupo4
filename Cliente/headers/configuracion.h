@@ -14,12 +14,11 @@ public:
     Configuracion(int version, const char* ruta, const char* fecha);
     ~Configuracion();
 
-    // Getters
+
     int getVersion() const;
     const char* getRuta() const;
     const char* getFecha() const;
     Configuracion& operator=(const Configuracion& other);
-    // Setters
     void setVersion(int version);
     void setRuta(const char* ruta);
     void setFecha(const char* fecha);

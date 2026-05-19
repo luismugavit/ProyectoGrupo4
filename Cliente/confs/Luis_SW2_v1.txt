@@ -1,6 +1,6 @@
 --- Switch CONFIG ---
-Device: Iglesias
+Device: SW2
 Type: Switch
 Generated: 19/05/2026
-IPv4: 10.0.79.7
+IPv4: 10.0.222.38
 Gateway: 10.0.0.1
