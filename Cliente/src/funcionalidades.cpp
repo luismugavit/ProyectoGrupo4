@@ -17,95 +17,114 @@ void anadirDispositivo(){
 
     char fechaActual[256];
     time_t ahora = time(0);
-    struct tm tstruct;
-    tstruct = *localtime(&ahora);
+    struct tm tstruct = *localtime(&ahora);
     strftime(fechaActual, sizeof(fechaActual), "%d/%m/%Y", &tstruct);
 
-    std::cout << listaDispositivos[0].getNombre() << std::endl;
+    // Calcular nuevo ID
     int nuevoId = 1;
     for (int i = 0; i < numDispositivos; i++) {
-        if (listaDispositivos[i].id >= nuevoId) {
+        if (listaDispositivos[i].id >= nuevoId)
             nuevoId = listaDispositivos[i].id + 1;
-        }
     }
 
-    Dispositivo* temporal = new Dispositivo[numDispositivos+1];
-
-    for(int i = 0; i < numDispositivos; i++){
-        temporal[i] = listaDispositivos[i];
-        listaDispositivos[i].configs = nullptr; //DESVINCULAR LISTA DE CONFIGS PARA QUE NO SE BORRE, REFORMAR COPIAS DE LA CLASE DISPOSITIVO
-    }
-    
-    if (temporal == nullptr) {
-        std::cout << "Error: No hay memoria suficiente." << std::endl;
-        return;
-    }
-    
-
+    // Pedir nombre
     char nombre[100];
-    
     std::cout << "Introduce el nombre del dispositivo: ";
-    std::cin.ignore(); 
+    std::cin.ignore();
     std::cin.getline(nombre, 100);
-    
-    Dispositivo dispNuevo = Dispositivo(nuevoId,nombre);
 
+    // Pedir tipo
+    std::cout << "\nTipo de dispositivo:\n";
+    std::cout << "  1. Router\n";
+    std::cout << "  2. Switch\n";
+    std::cout << "  3. Punto de Acceso\n";
+    std::cout << "  4. Generico\n";
+    std::cout << "Seleccione > ";
+    int tipo;
+    std::cin >> tipo;
 
-     
-    dispNuevo.num_configs = 1;
-    dispNuevo.configs = new Configuracion[1];
-    dispNuevo.configs[0].version = 1;
-    strcpy(dispNuevo.configs[0].fecha, fechaActual); 
-    sprintf(dispNuevo.configs[0].ruta, "%s_%s_v%d.txt", nombreCliente.c_str(),dispNuevo.nombre, dispNuevo.configs[0].version);
+    // Crear dispositivo según tipo (polimorfismo)
+    Dispositivo* dispNuevo = nullptr;
+
+    if (tipo == 1) {
+        Router* r = new Router(nuevoId, nombre);
+        std::cout << "IP WAN (ej: 81.45.10.1): ";
+        std::cin >> r->ip_wan;
+        std::cout << "Gateway (ej: 81.45.10.254): ";
+        std::cin >> r->gateway;
+        std::cout << "Numero de interfaces: ";
+        std::cin >> r->num_interfaces;
+        dispNuevo = r;
+    } else if (tipo == 2) {
+        Switch* s = new Switch(nuevoId, nombre);
+        std::cout << "Numero de puertos: ";
+        std::cin >> s->num_puertos;
+        std::cout << "VLAN principal (ej: VLAN10): ";
+        std::cin >> s->vlan_principal;
+        dispNuevo = s;
+    } else if (tipo == 3) {
+        PuntoAcceso* p = new PuntoAcceso(nuevoId, nombre);
+        std::cout << "SSID de la red: ";
+        std::cin >> p->ssid;
+        std::cout << "Banda (2.4GHz / 5GHz / Dual): ";
+        std::cin >> p->banda;
+        dispNuevo = p;
+    } else {
+        dispNuevo = new Dispositivo(nuevoId, nombre);
+    }
+
+    // Crear config inicial automática
+    dispNuevo->num_configs = 1;
+    dispNuevo->configs = new Configuracion[1];
+    dispNuevo->configs[0].version = 1;
+    strcpy(dispNuevo->configs[0].fecha, fechaActual);
+    sprintf(dispNuevo->configs[0].ruta, "%s_%s_v%d.txt",
+            nombreCliente.c_str(), dispNuevo->nombre, 1);
+
     char rutaNu[256];
-    sprintf(rutaNu, "confs/%s",dispNuevo.configs[0].ruta);
-    //std::cout << rutaNu << std::endl;
+    sprintf(rutaNu, "confs/%s", dispNuevo->configs[0].ruta);
     std::ofstream archivo(rutaNu);
     if (archivo.is_open()) {
         srand(time(NULL) + nuevoId);
-        archivo << "--- ROUTER CONFIG FILE ---\n";
-        archivo << "Device: " << dispNuevo.nombre << "\n";
+        archivo << "--- " << dispNuevo->getTipo() << " CONFIG ---\n";
+        archivo << "Device: "    << dispNuevo->nombre << "\n";
+        archivo << "Type: "      << dispNuevo->getTipo() << "\n";
         archivo << "Generated: " << fechaActual << "\n";
-        archivo << "IPv4: 10.0." << (rand() % 255) << "." << (rand() % 255) << "\n";
+        archivo << "IPv4: 10.0." << (rand()%255) << "." << (rand()%255) << "\n";
         archivo << "Gateway: 10.0.0.1\n";
-        archivo << "DNS: 8.8.8.8\n";
-        archivo << "Interface: eth" << (rand() % 8) << "\n";
         archivo.close();
-    }else{
-            std::cout << "NO ENCONTRAO" << std::endl;
-
     }
 
-
+    // Añadir a la lista
+    Dispositivo* temporal = new Dispositivo[numDispositivos + 1];
+    for (int i = 0; i < numDispositivos; i++) {
+        temporal[i] = listaDispositivos[i];
+        listaDispositivos[i].configs = nullptr;
+    }
+    temporal[numDispositivos] = *dispNuevo;
+    dispNuevo->configs = nullptr;
+    delete dispNuevo;
 
     delete[] listaDispositivos;
-
-    temporal[numDispositivos] = dispNuevo;
-
-    dispNuevo.configs = nullptr; //DESVINCULAR LISTA DE CONFIGS PARA QUE NO SE BORRE, REFORMAR COPIAS DE LA CLASE DISPOSITIVO
-
     listaDispositivos = temporal;
-
     numDispositivos++;
-    
 
-    std::cout << "Dispositivo añadido con exito (ID: " << nuevoId << ")" << std::endl;
-    
-    
-
-
-} 
+    std::cout << "Dispositivo añadido con exito (ID: " << nuevoId << ")\n";
+}
 
 void listarDispositivos(){
+    std::cout << "ID        TIPO          NOMBRE     VERSION\n";
+    std::cout << "----  ------------  ------------  -------\n";
     for(int i = 0; i < numDispositivos; i++){
-        if(listaDispositivos[i].num_configs !=0){
-
-         std::cout <<listaDispositivos[i].id << "    " << listaDispositivos[i].nombre <<"       " << listaDispositivos[i].configs[listaDispositivos[i].num_configs-1].getVersion() <<std::endl;
-        }else{
-            std::cout <<listaDispositivos[i].id << "    " << listaDispositivos[i].nombre <<"       " <<"SIN VERSION" <<std::endl;
+        std::cout << listaDispositivos[i].id << "     "
+                  << listaDispositivos[i].getTipo() << "     "
+                  << listaDispositivos[i].nombre << "     ";
+        if(listaDispositivos[i].num_configs != 0){
+            std::cout <<  "     " << listaDispositivos[i].configs[listaDispositivos[i].num_configs-1].getVersion();
+        } else {
+            std::cout << "SIN VERSION";
         }
-
-
+        std::cout << "\n";
     }
 }
 
@@ -129,22 +148,19 @@ void eliminarDispositivo(){
         return;
     }
 
-    // --- NUEVA LÓGICA: ELIMINAR ARCHIVOS FÍSICOS ---
+    
     if (listaDispositivos[index].configs != nullptr) {
         for (int j = 0; j < listaDispositivos[index].num_configs; j++) {
-            // Intentamos borrar el archivo del disco usando la ruta guardada
             char rutaNu[256];
             sprintf(rutaNu, "confs/%s",listaDispositivos[index].configs[j].ruta);
             if (remove(rutaNu) == 0) {
                 std::cout << "Archivo eliminado: " << listaDispositivos[index].configs[j].ruta << "\n";
             } else {
-                // Si el archivo no existe o está bloqueado, no detenemos el programa
                 std::cerr << "Aviso: No se pudo borrar el archivo fisico " 
                           << listaDispositivos[index].configs[j].ruta << "\n";
             }
         }
         
-        // Ahora que los archivos no están, liberamos la memoria del array de configs
         delete[] listaDispositivos[index].configs;
         listaDispositivos[index].configs = nullptr; 
     }
@@ -159,12 +175,12 @@ void eliminarDispositivo(){
 
     for (int i = 0; i < index; i++) {
         nuevaLista[i] = listaDispositivos[i];
-        listaDispositivos[i].configs = nullptr; //DESVINCULAR LISTA DE CONFIGS PARA QUE NO SE BORRE, REFORMAR COPIAS DE LA CLASE DISPOSITIVO
+        listaDispositivos[i].configs = nullptr; 
     }
 
     for (int i = index + 1; i < numDispositivos; i++) {
         nuevaLista[i - 1] = listaDispositivos[i];
-        listaDispositivos[i].configs = nullptr; //DESVINCULAR LISTA DE CONFIGS PARA QUE NO SE BORRE, REFORMAR COPIAS DE LA CLASE DISPOSITIVO
+        listaDispositivos[i].configs = nullptr; 
 
     }
     

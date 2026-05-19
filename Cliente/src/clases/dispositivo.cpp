@@ -104,3 +104,80 @@ void Dispositivo::mostrar() const {
         configs[i].mostrar();
     }
 }
+
+const char* Dispositivo::getTipo() const {
+    return "Dispositivo";
+}
+
+
+
+Router::Router() : Dispositivo() {
+    strcpy(ip_wan, "0.0.0.0");
+    strcpy(gateway, "0.0.0.0");
+    num_interfaces = 2;
+}
+
+Router::Router(int id, const char* nombre) : Dispositivo(id, nombre) {
+    strcpy(ip_wan, "0.0.0.0");
+    strcpy(gateway, "0.0.0.0");
+    num_interfaces = 2;
+}
+
+const char* Router::getTipo() const {
+    return "Router";
+}
+
+void Router::mostrar() const {
+    std::cout << "[Router] ID: " << id
+              << " | Nombre: "   << nombre
+              << " | WAN: "      << ip_wan
+              << " | Gateway: "  << gateway
+              << " | Versiones: " << num_configs << "\n";
+}
+
+
+
+Switch::Switch() : Dispositivo() {
+    num_puertos = 24;
+    strcpy(vlan_principal, "VLAN1");
+}
+
+Switch::Switch(int id, const char* nombre) : Dispositivo(id, nombre) {
+    num_puertos = 24;
+    strcpy(vlan_principal, "VLAN1");
+}
+
+const char* Switch::getTipo() const {
+    return "Switch";
+}
+
+void Switch::mostrar() const {
+    std::cout << "[Switch] ID: " << id
+              << " | Nombre: "       << nombre
+              << " | Puertos: "      << num_puertos
+              << " | VLAN: "         << vlan_principal
+              << " | Versiones: "    << num_configs << "\n";
+}
+
+
+PuntoAcceso::PuntoAcceso() : Dispositivo() {
+    strcpy(ssid, "RED_CORP");
+    strcpy(banda, "Dual");
+}
+
+PuntoAcceso::PuntoAcceso(int id, const char* nombre) : Dispositivo(id, nombre) {
+    strcpy(ssid, "RED_CORP");
+    strcpy(banda, "Dual");
+}
+
+const char* PuntoAcceso::getTipo() const {
+    return "PuntoAcceso";
+}
+
+void PuntoAcceso::mostrar() const {
+    std::cout << "[PuntoAcceso] ID: " << id
+              << " | Nombre: "  << nombre
+              << " | SSID: "    << ssid
+              << " | Banda: "   << banda
+              << " | Versiones: " << num_configs << "\n";
+}

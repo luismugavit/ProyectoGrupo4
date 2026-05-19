@@ -1,0 +1,6 @@
+--- Switch CONFIG ---
+Device: Iglesias
+Type: Switch
+Generated: 19/05/2026
+IPv4: 10.0.79.7
+Gateway: 10.0.0.1
