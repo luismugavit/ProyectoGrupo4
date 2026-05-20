@@ -157,7 +157,7 @@ int insertDispositivoDB(sqlite3 *db, dispositivo disp, int id_cliente) {
 
       
         if (sqlite3_step(stmt) != SQLITE_DONE) {
-            printf("Error insertando Configuracion v%d para Dispositivo %d\n", conf.version, disp.id);
+            //printf("Error insertando Configuracion v%d para Dispositivo %d\n", conf.version, disp.id);
         } else {
             printf("Configuracion v%d de %s insertada (INSERT)\n", conf.version, disp.nombre);
         }
