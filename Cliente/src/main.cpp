@@ -11,7 +11,7 @@
 
 Dispositivo* listaDispositivos;
 int numDispositivos;
-std::string nombreCliente = "Luis";
+std::string nombreCliente;
 
 
 int main() {

@@ -97,7 +97,7 @@ int conectarServidorB(){
     std::string login_msg = "LOGIN " + usuario + " " + password;
     send(sock, login_msg.c_str(), login_msg.size() + 1, 0);
 
-
+    nombreCliente = usuario;
 
     recibirMensajeB(sock, buffer, sizeof(buffer));
 
@@ -227,7 +227,7 @@ int subirCambios(SOCKET sock) {
     for (int i = 0; i < numDispositivos; i++) {
         Dispositivo d = listaDispositivos[i];
         sprintf(buffer, "DISPOSITIVO %d %s %d", d.id, d.nombre, d.num_configs);
-        std::cout << buffer << "\n";
+        //std::cout << buffer << "\n";
         send(sock, buffer, strlen(buffer) + 1, 0);
 
         for (int j = 0; j < d.num_configs; j++) {

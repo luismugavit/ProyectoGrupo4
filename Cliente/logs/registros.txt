@@ -1,2 +1,8 @@
 [19/05/2026 22:01:32] Se ha añadido un dispositivo tipo 2 con nombre 'SW3' y ID 92
 [19/05/2026 22:31:20] Se ha añadido la configuracion v2 al dispositivo 'SW2'
+[20/05/2026 13:52:20] Se ha añadido un dispositivo tipo 3 con nombre 'PuntoAccesoHall' y ID 2
+[20/05/2026 13:55:39] Se ha añadido un dispositivo tipo 3 con nombre 'PuntoAcceso1' y ID 2
+[20/05/2026 13:56:17] Se ha añadido la configuracion v2 al dispositivo 'Router-1'
+[20/05/2026 13:58:26] Se ha añadido un dispositivo tipo 3 con nombre 'PuntoAcceso1' y ID 2
+[20/05/2026 13:59:16] Se ha añadido la configuracion v2 al dispositivo 'PuntoAcceso1'
+[20/05/2026 14:10:16] Se ha añadido un dispositivo tipo 2 con nombre 'Switch1' y ID 3
