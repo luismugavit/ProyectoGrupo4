@@ -11,3 +11,5 @@
 [20/05/2026 14:22:22] Se ha eliminado el dispositivo con ID 4
 [20/05/2026 14:22:52] Se ha añadido la configuracion v2 al dispositivo 'Switch1'
 [20/05/2026 14:34:58] Se ha añadido la configuracion v2 al dispositivo 'Router-1'
+[20/05/2026 15:29:49] Se ha añadido un dispositivo tipo 2 con nombre 'SW2' y ID 2
+[20/05/2026 15:29:58] Se ha añadido la configuracion v2 al dispositivo 'SW2'

@@ -32,6 +32,7 @@ void mostrarMenuGestionDispositivos() {
 
 }
 void ejecutarMenuPrincipal(){
+    
     int opcion;
     bool volver = false;
     do {
@@ -81,7 +82,7 @@ void ejecutarMenuGestionDispositivos() {
                 std::cout << "           LISTA DISPOSITIVOS\n";
                 std::cout << "===========================================\n\n";
 
-                std::cout << "ID    NOMBRE  VERSION\n";
+
                 listarDispositivos();
                 break;
 

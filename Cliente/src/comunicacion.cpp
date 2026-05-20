@@ -196,7 +196,7 @@ int conectarServidorB(){
 
     }
 
-
+    
     recibirMensajeB(sock, buffer, sizeof(buffer));
 
     
