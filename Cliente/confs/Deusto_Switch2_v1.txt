@@ -1,6 +1,6 @@
 --- Switch CONFIG ---
-Device: Switch1
+Device: Switch2
 Type: Switch
 Generated: 20/05/2026
-IPv4: 10.0.58.12
+IPv4: 10.0.129.199
 Gateway: 10.0.0.1

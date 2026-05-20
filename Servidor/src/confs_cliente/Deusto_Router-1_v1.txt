@@ -1,6 +1,0 @@
---- Router CONFIG ---
-Device: Router-1
-Type: Router
-Generated: 19/05/2026
-IPv4: 10.0.170.30
-Gateway: 10.0.0.1

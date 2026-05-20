@@ -1,6 +1,0 @@
---- PuntoAcceso CONFIG ---
-Device: PuntoAcceso1
-Type: PuntoAcceso
-Generated: 20/05/2026
-IPv4: 10.0.25.240
-Gateway: 10.0.0.1

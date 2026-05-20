@@ -128,11 +128,11 @@ int insertDispositivoDB(sqlite3 *db, dispositivo disp, int id_cliente) {
 
 
     result = sqlite3_step(stmt);
-    if (result != SQLITE_DONE) {
-        printf("Error al insertar Dispositivo %d: %s\n", disp.id, sqlite3_errmsg(db));
-        sqlite3_finalize(stmt);
-        return result; 
-    }
+    // if (result != SQLITE_DONE) {
+    //     //printf("Error al insertar Dispositivo %d: %s\n", disp.id, sqlite3_errmsg(db));
+    //     sqlite3_finalize(stmt);
+
+    // }
     
     sqlite3_finalize(stmt);
     printf("Dispositivo: %s insertado correctamente en BD.\n", disp.nombre);
