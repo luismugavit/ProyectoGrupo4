@@ -94,7 +94,7 @@ int insertClienteBD(sqlite3 *db, cliente c) {
 
         
             if (sqlite3_step(stmt) != SQLITE_DONE) {
-                printf("Error inserting Configuracion v%d para Dispositivo %d\n", conf.version, disp.id);
+                //printf("Error inserting Configuracion v%d para Dispositivo %d\n", conf.version, disp.id);
             }
 
 			printf("Config: %d, de Disp: %s insertado (INSERT)\n", conf.version,disp.nombre);
